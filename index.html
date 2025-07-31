@@ -187,7 +187,7 @@
                     <label for="api-key-input" class="block text-sm font-medium text-gray-300 mb-2">Google AI Studio API Key</label>
                     <input type="password" id="api-key-input" class="w-full bg-gray-900/80 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Masukkan API Key Anda">
                 </div>
-                <p id="settings-feedback" class="text-sm text-green-400 text-center hidden"></p>
+                <p id="settings-feedback" class="text-sm text-center hidden"></p>
                 <div class="flex gap-4">
                     <button id="delete-api-key-btn" class="w-full bg-red-600/80 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200">Hapus</button>
                     <button id="save-api-key-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200">Simpan</button>
@@ -204,6 +204,7 @@
                 <button id="close-help-modal-btn" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
             <div class="p-6 overflow-y-auto custom-scrollbar space-y-8">
+                <!-- Section 1: API Key Tutorial -->
                 <section>
                     <h3 class="text-xl font-bold text-indigo-300 mb-4">Cara Mendapatkan API Key Google AI Studio</h3>
                     <div class="space-y-3 text-gray-300 text-sm leading-relaxed">
@@ -250,6 +251,8 @@
                         <div>
                             <h4 class="font-bold text-lg text-indigo-400 mb-2">Gaya Video</h4>
                             <ul class="list-disc list-inside space-y-2">
+                                <li><span class="font-bold">Tampilan Iklan Minuman:</span> Video close-up super lambat yang fokus pada detail cairan, embun, dan gelembung.</li>
+                                <li><span class="font-bold">Ledakan Rasa:</span> Video dramatis yang menampilkan ledakan bubuk atau cairan berwarna di sekitar produk.</li>
                                 <li><span class="font-bold">Nikmat Sampai Belepotan:</span> Video close-up yang menunjukkan ekspresi nikmat saat makan sampai berantakan.</li>
                                 <li><span class="font-bold">Tak Ada yang Tersisa:</span> Video lucu saat remah yang jatuh diambil dan dimakan saking enaknya.</li>
                                 <li><span class="font-bold">Sampai Tetes Terakhir:</span> Video sinematik saat tetesan terakhir minuman jatuh ke mulut.</li>
@@ -394,24 +397,47 @@
         setupModal(helpModal, helpBtn, closeHelpModalBtn);
 
         // --- Settings Logic ---
+        async function validateApiKey(key) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`;
+            try {
+                const response = await fetch(url);
+                return response.ok;
+            } catch (error) {
+                console.error("API Key validation error:", error);
+                return false;
+            }
+        }
+
         function checkApiKey() {
             const apiKey = localStorage.getItem('googleApiKey');
             apiKeyNotice.classList.toggle('hidden', !!apiKey);
         }
 
-        saveApiKeyBtn.addEventListener('click', () => {
+        saveApiKeyBtn.addEventListener('click', async () => {
             const apiKey = apiKeyInput.value.trim();
-            if (apiKey) {
+            settingsFeedback.classList.remove('hidden');
+            settingsFeedback.textContent = 'Memvalidasi kunci...';
+            settingsFeedback.classList.remove('text-red-400', 'text-green-400');
+            
+            if (!apiKey) {
+                settingsFeedback.textContent = 'Kolom API Key tidak boleh kosong.';
+                settingsFeedback.classList.add('text-red-400');
+                return;
+            }
+
+            const isValid = await validateApiKey(apiKey);
+
+            if (isValid) {
                 localStorage.setItem('googleApiKey', apiKey);
-                settingsFeedback.textContent = 'API Key berhasil disimpan!';
-                settingsFeedback.classList.remove('hidden');
+                settingsFeedback.textContent = 'API Key valid dan berhasil disimpan!';
+                settingsFeedback.classList.add('text-green-400');
                 setTimeout(() => {
                     settingsModal.classList.add('hidden');
                     checkApiKey();
                 }, 1500);
             } else {
-                settingsFeedback.textContent = 'Kolom API Key tidak boleh kosong.';
-                settingsFeedback.classList.remove('hidden');
+                settingsFeedback.textContent = 'API Key tidak valid atau salah.';
+                settingsFeedback.classList.add('text-red-400');
             }
         });
 
@@ -420,6 +446,8 @@
             apiKeyInput.value = '';
             settingsFeedback.textContent = 'API Key berhasil dihapus!';
             settingsFeedback.classList.remove('hidden');
+            settingsFeedback.classList.add('text-green-400');
+            settingsFeedback.classList.remove('text-red-400');
             setTimeout(() => {
                 settingsModal.classList.add('hidden');
                 checkApiKey();
@@ -430,25 +458,21 @@
 
         // --- Prompt Templates ---
         const imagePrompts = {
-            'pixar-style': { name: 'Gaya 3D Pixar', generator: (food, hasImage) => hasImage ? `Transform the uploaded photo of [${food}] into a cute 3D character, Pixar animation style. Give it expressive, googly eyes and a happy smile. The texture should be soft and appealing. Rendered in a colorful, whimsical environment. 3D render, high detail, vibrant colors.` : `A cute 3D character of [${food}], in the style of a Pixar animation. The food has expressive, googly eyes and a happy smile. Soft, appealing texture. Rendered in a colorful, whimsical environment. 3D render, high detail, vibrant colors.` },
-            'knolling-photo': { name: 'Fotografi Knolling', generator: (food, hasImage) => hasImage ? `Deconstruct the uploaded photo of [${food}] and its main ingredients into a knolling photography layout. Arrange all items neatly at 90-degree angles on a clean, solid color background. Top-down flat lay shot. Perfect, satisfying alignment. Studio lighting, sharp focus, highly organized.` : `Knolling photography of [${food}] and its main ingredients. All items are arranged neatly at 90-degree angles on a clean, solid color background. Top-down flat lay shot. Perfect, satisfying alignment. Studio lighting, sharp focus, highly organized.` },
-            'ukiyo-e-style': { name: 'Gaya Ukiyo-e Jepang', generator: (food, hasImage) => hasImage ? `Reinterpret the uploaded photo of [${food}] in the style of a Japanese Ukiyo-e woodblock print. Use flat colors, bold outlines, and traditional Japanese patterns. The composition should be artistic and stylized, reminiscent of Hokusai or Hiroshige.` : `[${food}] in the style of a Japanese Ukiyo-e woodblock print. Flat colors, bold outlines, and traditional Japanese patterns. The composition is artistic and stylized, reminiscent of Hokusai or Hiroshige.` },
+            'street-food-ad-img': { name: 'Iklan Makanan Jalanan (Baru!)', generator: (food, hasImage) => `A hyper-realistic studio photograph of a sizzling [${food}] captured mid-air with dynamic energy. The scene is set against a dark black background, with flames and chili pepper flakes bursting behind the [${food}] to give a sense of intense heat and spice. Ingredients and drops of sauce float around in motion. The lighting is cinematic and warm, enhancing textures and freshness. Styled like a bold street food advertisement with vibrant colors, motion, and dramatic fire effects.` },
+            'beverage-ad-img': { name: 'Iklan Minuman Menyegarkan', generator: (food, hasImage) => hasImage ? `Transform the uploaded photo of [${food}] into an award-winning beverage advertisement. The shot is an extreme close-up, centered on the glass. We only see the vibrant liquid, perfect condensation beads on the frosted glass, and soft bubbles rising. Backlit by warm sunlight, casting a refreshing glow. Set against a clean, sky blue background. Hyper-realistic, 8K.` : `Award-winning beverage photography of [${food}]. An extreme close-up, centered shot of the chilled drink. We are so close we only see the vibrant liquid, condensation beads on the frosted glass, and soft golden bubbles rising slowly. Backlit by warm sunlight, casting a refreshing glow. Clean, sky blue background. Hyper-realistic, 8K.` },
             'sticker-design': { name: 'Desain Stiker', generator: (food, hasImage) => hasImage ? `Convert the uploaded photo of [${food}] into a die-cut vinyl sticker illustration. The design should be bold and graphic, with a thick white border around the subject. Isolated on a clean background. Vector art style, vibrant colors.` : `A die-cut vinyl sticker illustration of [${food}]. Bold and graphic design with a thick white border around the subject. Isolated on a clean background. Vector art style, vibrant colors.` },
             'isometric-diorama': { name: 'Diorama Isometrik', generator: (food, hasImage) => hasImage ? `Place the uploaded [${food}] inside a tiny, cute, isometric 3D diorama of a kitchen or dining room. The room is highly detailed with miniature furniture. Soft, warm lighting. 3D render, low-poly, detailed miniature.` : `A tiny, cute, isometric 3D diorama of a kitchen featuring [${food}] as the centerpiece. The room is highly detailed with miniature furniture and accessories. Soft, warm lighting. 3D render, low-poly, detailed miniature.` },
             'pro-photographer': { name: 'Sentuhan Fotografer Pro', generator: (food, hasImage) => hasImage ? `Using the uploaded photo as a reference, elevate this image of [${food}] to a professional, commercial standard. Re-compose the shot following the rule of thirds. Re-light the scene using a three-point lighting setup: a large softbox for soft key light, a subtle backlight for rim lighting and texture emphasis, and a reflector to fill shadows. Enhance details as if shot with a Phase One camera and a macro lens. Apply professional color grading for appetizing tones and use dodge and burn to make textures pop. The result should be clean, crisp, and hyper-realistic 8K quality.` : `Professional food photography of [${food}], meticulously styled and composed following the rule of thirds. Lit with a three-point lighting setup: a large softbox as the key light for soft, diffused illumination, a backlight to create a beautiful rim light effect and highlight steam, and a silver reflector to gently fill in shadows. Shot on a Phase One XF camera with an 80mm Schneider Kreuznach Blue Ring lens at f/4 for incredible detail and clarity. The final image is color graded with subtle, appetizing tones, and uses dodge and burn techniques to enhance textures. Commercial quality, hyper-realistic, 8k.` },
             'dramatic-action': { name: 'Dramatic Action Shot', generator: (food, hasImage) => hasImage ? `Using the uploaded image as a reference, create a dramatic action shot of [${food}]. Emphasize ingredients overflowing or sauce dripping in a mouthwatering way. The shot must be captured mid-action. Use cinematic studio lighting with high contrast and soft shadows to create a fiery, intense mood. Add realistic steam. The final image must have macro lens detail, shallow depth of field, and photo-realistic 8K quality.` : `Dramatic close-up shot of [${food}], captured mid-action. Show ingredients overflowing or sauce dripping in a mouthwatering way. Use cinematic studio lighting with high contrast and soft shadows to create a fiery, intense mood with glowing embers in the background. Add realistic steam. Macro lens detail, shallow depth of field, photo-realistic 8K quality.` },
             'cinematic-luxury': { name: 'Cinematic Luxury', generator: (food, hasImage) => hasImage ? `Using the uploaded image as a primary reference, transform this photo of [${food}] into a cinematic, luxury style. Keep the main dish recognizable but enhance the plating. Change the background to a bright, upscale restaurant, softly blurred, filled with stylish diners. The lighting should be soft natural window light with gentle shadows. Emulate a shot from a Sony a7R IV + 100mm f/2.8 Macro for creamy bokeh. Add an elegant table setting. ultra realistic, photorealistic, 8k.` : `Cinematic food photography featuring a surreal luxury dish with [${food}]. Sharp focus, soft natural window light, gentle shadows. Background: bright upscale restaurant, softly blurred. Shot on Sony a7R IV + 100mm f/2.8 Macro, f/2.8, ISO 200, 1/125s, shallow depth of field for creamy bokeh. Elegant table setting. ultra realistic, photorealistic, 8k.` },
             'rustic-cozy': { name: 'Rustic & Cozy', generator: (food, hasImage) => hasImage ? `Take the uploaded image of [${food}] and recreate it with a cozy, rustic aesthetic. Place the dish on a handmade ceramic plate on a warm, wooden table. The lighting should feel like soft morning light next to a steamy window on a rainy day. Emphasize texture. Emulate a Canon EOS 5D Mark IV, 50mm f/1.8 lens for a warm, homely feeling.` : `Cozy, rustic food photography of [${food}] on a handmade ceramic plate. Warm, wooden table, soft morning light. Close-up shot, emphasizing texture. Shot with a Canon EOS 5D Mark IV, 50mm f/1.8 lens, shallow depth of field, warm tones, photorealistic.` },
-            'minimalist-modern': { name: 'Minimalist & Modern', generator: (food, hasImage) => hasImage ? `Convert the uploaded photo of [${food}] into a minimalist, modern style. Isolate the dish, center it perfectly on a simple matte white plate, and set it against a clean, solid light-grey background. Use a clean, hard light to create defined shadows. Recreate as a top-down flat lay shot. Focus on clean lines. High detail, studio quality, 8k.` : `Minimalist, modern food photography of [${food}]. Centered on a simple, matte white plate against a solid light-grey background. Clean, hard light, defined shadows. Top-down shot (flat lay). Focus on clean lines and geometric plating. Fujifilm GFX 100S, extremely high detail, studio quality, 8k.` },
             'street-food-vibrant': { name: 'Street Food Vibrant', generator: (food, hasImage) => hasImage ? `Transform the uploaded image of [${food}] into a vibrant, dynamic street food scene. Place it in the context of a bustling night market stall with colorful neon lights in a motion-blurred background. Add steam rising from the food. The atmosphere should feel gritty and authentic. Emulate a Nikon Z7 II, 35mm f/1.8 lens to capture energy. High contrast, saturated colors.` : `Vibrant, dynamic action shot of [${food}] at a bustling night market stall. Motion blur background with colorful neon lights. Steam rising from the food. Sharp focus on the dish. Gritty, authentic atmosphere. Shot with a Nikon Z7 II, 35mm f/1.8 lens. High contrast, saturated colors, cinematic.` },
             'dark-moody': { name: 'Dark & Moody', generator: (food, hasImage) => hasImage ? `Re-imagine the uploaded photo of [${food}] with a dark and moody theme. Place the dish on a dark slate platter. Use a dramatic, single-source Chiaroscuro lighting from the side to create deep shadows and highlight textures. The background should be dark and indistinct. The final image should have a painterly, atmospheric, and sophisticated quality. High detail.` : `Dark and moody food photography of [${food}] on a dark slate platter. Chiaroscuro lighting, single dramatic light source, deep shadows. Background is dark and indistinct. Rich, deep colors. Hasselblad X1D II, painterly quality, atmospheric, intense, highly detailed.` },
-            'pop-art-explosion': { name: 'Pop Art Explosion', generator: (food, hasImage) => hasImage ? `Transform the uploaded photo of [${food}] into a bold pop art style illustration. Use vibrant, hyper-saturated colors and add thick black comic-book outlines to the food. The background should be a dynamic pattern of Ben-Day dots. Reference the style of Andy Warhol. Flat, graphic, and extremely eye-catching.` : `Bold pop art style food illustration of [${food}]. Featuring vibrant, hyper-saturated colors, thick black comic-book outlines, and a background of dynamic Ben-Day dots. The style should be reminiscent of Andy Warhol or Roy Lichtenstein. Flat, graphic, and extremely eye-catching.` },
-            'futuristic-neon': { name: 'Futuristic Neon', generator: (food, hasImage) => hasImage ? `Re-imagine the uploaded photo of [${food}] in a futuristic, cyberpunk setting. Keep the dish's shape but make it look glossy and illuminated by vibrant magenta and cyan neon lights. Place it on a sleek, metallic surface against a dark, futuristic cityscape background with bokeh. High-tech, sci-fi aesthetic, hyper-detailed.` : `Futuristic, cyberpunk-style photography of [${food}]. The dish is presented on a sleek, metallic surface, illuminated by vibrant magenta and cyan neon lights reflecting off the food and creating glowing edges. The background is a dark, futuristic cityscape at night with bokeh lights. High-tech, glossy, sci-fi aesthetic, hyper-detailed.` },
-            'fantasy-whimsical': { name: 'Fantasy & Whimsical', generator: (food, hasImage) => hasImage ? `Turn the uploaded photo of [${food}] into an enchanting, fantasy scene. The dish should look like a magical meal, with ethereal glowing particles added around it. The background should be transformed into a mystical forest with soft, magical light. Whimsical, dreamy, and otherworldly aesthetic.` : `Enchanting, fantasy-style photograph of [${food}]. The dish is presented as if it's a magical meal in an enchanted forest. Ethereal glowing particles float around the food, with soft, magical light filtering through a mystical forest canopy in the background. Whimsical, dreamy, and otherworldly aesthetic, cinematic.` },
-            'ghibli-style': { name: 'Gaya Anime Ghibli', generator: (food, hasImage) => hasImage ? `Transform the uploaded photo of [${food}] into a beautiful, painterly digital illustration in the iconic style of Studio Ghibli. Recreate the scene with soft, warm lighting and a hand-drawn feel. The food should look delicious and comforting. The background should be a cozy, detailed anime scene. Nostalgic and heartwarming.` : `A beautiful, painterly digital illustration of [${food}] in the iconic style of Studio Ghibli. Soft, warm lighting, hand-drawn feel with visible brush strokes. The food should look delicious and comforting. Set against a cozy, detailed anime background. Nostalgic, heartwarming, beautiful anime food.` },
             'claymation-style': { name: 'Gaya Claymation', generator: (food, hasImage) => hasImage ? `Recreate the uploaded photo of [${food}] as a charming 3D render in the style of claymation. The food should look like it's made from modeling clay, with visible fingerprints and tool marks to give it a handmade, tactile feel. Use soft studio lighting. Playful, whimsical, Aardman Animations style.` : `A charming 3D render of [${food}] in the style of claymation. The food should appear to be made of modeling clay, with visible fingerprints and tool marks for a handmade feel. Soft, studio lighting. The style should be reminiscent of Aardman Animations. Tactile, playful, and whimsical.` },
         };
         const videoPrompts = {
+            'beverage-ad': { name: 'Tampilan Iklan Minuman', generator: (food) => `An 8-second, beautiful macro video of [${food}].\n--shot (0-8s): A single, continuous extreme close-up shot of the [${food}] in a glass. The camera is so close we only see the liquid, condensation beads on the frosted glass, and soft golden bubbles rising very slowly. The camera slowly and smoothly tracks upwards, following the bubbles.\n--style: Backlit by warm sunlight, casting a refreshing glow. Clean, simple, sky-blue background. Award-winning beverage videography, ultra-realistic, 8K.` },
+            'flavor-explosion': { name: 'Ledakan Rasa', generator: (food) => `An 8-second, ultra slow-motion video of [${food}], advertising style.\n--shot (0-3s): The [${food}] is perfectly centered, suspended mid-air against a clean, pure black background. The camera does a slow, dramatic orbit shot around it.\n--shot (3-6s): A powerful explosion of colorful powder (matching the food's flavor, e.g., red for chili, yellow for cheese) erupts from behind and around the [${food}]. The particles fly towards the camera in 240fps slow motion.\n--shot (6-8s): The shot holds on the [${food}] surrounded by the beautiful, frozen-in-time particle cloud. The text "${food.toUpperCase()}" appears in a sleek, modern, and sharp font.\n--style: High-end commercial look, cinematic studio lighting, C4D and Octane render style, exquisite details, 8K.` },
             'messy-eating': { name: 'Nikmat Sampai Belepotan', generator: (food) => `A 7-second, highly realistic video capturing the pure enjoyment of eating [${food}].\n--shot (0-3s): Extreme close-up on a person's mouth taking a large, messy bite. Sauce and crumbs get on their face. The expression is pure bliss. Shot in slow motion (120fps).\n--shot (3-5s): A close-up shot of the person licking delicious seasoning or sauce off their fingers with satisfaction.\n--shot (5-7s): The person leans back, smiling, completely satisfied, with a little bit of food still messily on their face. The text "${food.toUpperCase()}" appears in a fun, bold, handwritten font.\n--style: Warm, natural lighting. Looks authentic and unscripted. Very realistic skin textures. Shot with a shallow depth of field to focus on the person and food.` },
             'no-leftovers': { name: 'Tak Ada yang Tersisa', generator: (food) => `A 7-second video showing someone enjoying [${food}] so much, not a single crumb is wasted.\n--shot (0-3s): A satisfying bite is taken from the [${food}], causing some delicious crumbs or a drop of sauce to fall onto the clean table below. Slow motion.\n--shot (3-5s): A close-up shot of a finger deliberately picking up the fallen crumb from the table.\n--shot (5-7s): The finger brings the crumb to the person's mouth, followed by a subtle, satisfied smile. The text "Too good to waste" appears in a simple, clean font.\n--style: Clean, bright lighting. A feeling of genuine, relatable enjoyment. Realistic, high-detail shot.` },
             'last-drop': { name: 'Sampai Tetes Terakhir', generator: (food) => `A 7-second, refreshing video of someone finishing a [${food}].\n--shot (0-3s): A close-up of a person confidently tilting a glass or bottle of [${food}] up to drink the last of it.\n--shot (3-6s): The camera does a dramatic slow zoom towards the person's mouth and the edge of the glass. The person's head is tilted back in anticipation.\n--shot (6-7s): An elegant, super slow-motion (240fps) extreme close-up of the single, last glistening drop of the beverage falling from the glass into their mouth. Followed by a satisfied sigh.\n--style: Clean, high-key lighting. Refreshing and satisfying mood. The shot is stylish and clean, not messy. Focus on the clarity of the liquid.`},
