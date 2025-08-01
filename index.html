@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FotoFood: Image & Video Prompt Generator</title>
+    <title>FotoFood - Generator Prompt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,270 +11,470 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
         }
         .title-font {
             font-family: 'Playfair Display', serif;
         }
-        /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
+        .upload-box {
+            border: 2px dashed #d1d5db;
+            transition: all 0.3s ease;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1f2937; /* gray-800 */
+        .upload-box:hover {
+            border-color: #4f46e5;
+            background-color: #f1f5f9;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #4b5563; /* gray-600 */
-            border-radius: 4px;
+        .radio-label {
+            border: 1px solid #d1d5db;
+            transition: all 0.2s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #6b7280; /* gray-500 */
+        input[type="radio"]:checked + .radio-label {
+            border-color: #4f46e5;
+            background-color: #e0e7ff;
+            box-shadow: 0 0 0 2px #c7d2fe;
         }
-        /* Hide default file input */
-        #image-upload {
-            display: none;
+        #prompt-output {
+            white-space: pre-wrap; /* Agar teks prompt tidak memanjang */
+            word-wrap: break-word;
         }
-        #image-preview-container {
-            transition: all 0.3s ease-in-out;
+        .copy-btn-feedback {
+            transition: opacity 0.5s;
         }
-        /* Active/Inactive toggle button style */
-        .toggle-btn-active {
-            background-color: #4f46e5; /* indigo-600 */
-            color: white;
-        }
-        .toggle-btn-inactive {
-            background-color: #374151; /* gray-700 */
-            color: #d1d5db; /* gray-300 */
+        /* Style untuk modal bantuan */
+        .help-modal-content {
+            max-height: 80vh;
+            overflow-y: auto;
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white antialiased">
+<body class="bg-gray-50 text-gray-800">
 
-    <div class="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop');">
-        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
-
-        <!-- Login Screen -->
-        <main id="login-screen" class="relative z-10 w-full max-w-sm mx-auto bg-gray-800/50 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
-            <div class="p-8 md:p-10">
-                <header class="text-center mb-8">
-                    <!-- Logo and App Name -->
-                    <div class="flex justify-center items-center gap-3 mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
-                        <h1 class="text-4xl font-bold title-font text-white">FotoFood</h1>
-                    </div>
-                    <p class="text-indigo-300 text-md">Silakan login untuk melanjutkan</p>
-                </header>
-                <div class="space-y-4">
-                    <div>
-                        <label for="email-input" class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                        <input type="email" id="email-input" class="w-full bg-gray-900/80 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="nama@email.com">
-                    </div>
-                    <div>
-                        <label for="password-input" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                        <input type="password" id="password-input" class="w-full bg-gray-900/80 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="••••••••">
-                    </div>
-                    <p id="login-error" class="text-sm text-red-400 text-center hidden"></p>
-                    <button id="login-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-500 shadow-lg">
-                        Login
-                    </button>
-                    <!-- Credit Text -->
-                    <p class="text-center text-sm text-white font-bold pt-4">Made by ProsBe</p>
-                </div>
+    <!-- Kontainer Login -->
+    <div id="login-container" class="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+            <!-- Logo -->
+            <div class="flex justify-center mb-4">
+                <svg class="w-20 h-20 text-indigo-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M12 6C11.4477 6 11 6.44772 11 7V17C11 17.5523 11.4477 18 12 18C12.5523 18 13 17.5523 13 17V7C13 6.44772 12.5523 6 12 6Z" fill="currentColor"/>
+                    <path d="M9 9C8.44772 9 8 9.44772 8 10V14C8 14.5523 8.44772 15 9 15C9.55228 15 10 14.5523 10 14V10C10 9.44772 9.55228 9 9 9Z" fill="currentColor" fill-opacity="0.5"/>
+                    <path d="M15 9C14.4477 9 14 9.44772 14 10V14C14 14.5523 14.4477 15 15 15C15.5523 15 16 14.5523 16 14V10C16 9.44772 15.5523 9 15 9Z" fill="currentColor" fill-opacity="0.5"/>
+                    <path d="M12 5C10.3431 5 9 6.34315 9 8V16C9 17.6569 10.3431 19 12 19C13.6569 19 15 17.6569 15 16V8C15 6.34315 13.6569 5 12 5Z" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
             </div>
-        </main>
+            <h2 class="text-3xl font-bold text-center title-font mb-6">Login FotoFood</h2>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="email" class="block text-gray-700 font-medium mb-2">Email</label>
+                    <input type="email" id="email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
+                    <input type="password" id="password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                    Login
+                </button>
+                <p id="login-error" class="text-red-500 text-sm mt-4 text-center"></p>
+            </form>
+            <!-- Tulisan Made by -->
+            <p class="text-center text-black font-bold mt-6">Made by ProsBe</p>
+        </div>
+    </div>
 
-        <!-- Main App (Initially Hidden) -->
-        <main id="main-app" class="hidden relative z-10 w-full max-w-2xl mx-auto bg-gray-800/50 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
-            <!-- NEW Header Bar -->
-            <div class="flex justify-between items-center p-4 border-b border-gray-700/50">
-                <div class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
-                    <h1 class="text-xl font-bold title-font text-white">FotoFood</h1>
+    <!-- Kontainer Aplikasi Utama (disembunyikan secara default) -->
+    <div id="app-container" class="hidden">
+        <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-6xl">
+            <!-- Header -->
+            <header class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
+                <div class="text-center sm:text-left">
+                    <h1 class="text-4xl md:text-5xl font-bold title-font text-gray-900">Generator Prompt FotoFood</h1>
+                    <p class="mt-2 text-lg text-gray-600">Dapatkan prompt AI profesional untuk fotografi makanan Anda.</p>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button id="help-btn" title="Bantuan" class="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700/50">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-question-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/></svg>
+                <div class="flex items-center justify-center sm:justify-end gap-2 flex-shrink-0">
+                     <button id="help-btn" class="p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors" title="Bantuan">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-question-lg" viewBox="0 0 16 16">
+                          <path fill-rule="evenodd" d="M4.475 5.458c-.284 0-.514-.237-.47-.517C4.28 3.24 5.576 2 8 2c2.426 0 4.22 1.24 4.475 2.94.044.28-.186.517-.47.517h-.005a.502.502 0 0 1-.498-.458c-.188-1.12-1.61-1.896-3.472-1.896-1.863 0-3.284.776-3.472 1.896a.502.502 0 0 1-.498.458h-.005zm-.168.59c.04.28.256.493.533.493h.005a.502.502 0 0 1 .498.458c.188 1.12 1.61 1.896 3.472 1.896 1.863 0 3.284-.776 3.472-1.896a.502.502 0 0 1 .498-.458h.005c.277 0 .493-.213.533-.493.04-.28-.186-.517-.47-.517h-.005a.502.502 0 0 1-.498-.458c-.188-1.12-1.61-1.896-3.472-1.896-1.863 0-3.284.776-3.472 1.896a.502.502 0 0 1-.498.458h-.005c-.284 0-.51.237-.47.517zM8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        </svg>
                     </button>
-                    <button id="settings-btn" title="Pengaturan" class="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700/50">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1 0 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105 0l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 0-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105 0l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858z"/></svg>
+                     <button id="settings-btn" class="p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors" title="Pengaturan">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16">
+                          <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1 0 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105 0l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 0-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105 0l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+                        </svg>
                     </button>
-                    <button id="logout-btn" title="Logout" class="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700/50">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
-                    </button>
+                    <button id="logout-btn" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors text-sm">Logout</button>
                 </div>
-            </div>
+            </header>
+
+            <main class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Kolom Input -->
+                    <div class="flex flex-col space-y-6">
+                        <!-- Langkah 1: Unggah Gambar (Opsional) -->
+                        <div>
+                            <h2 class="text-xl font-semibold mb-3"><span class="bg-indigo-600 text-white rounded-full w-8 h-8 inline-flex items-center justify-center mr-2">1</span> Masukkan Nama Makanan/Produk</h2>
+                            <input type="text" id="food-name-input" placeholder="Contoh: Es Kopi Susu" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <p class="text-xs text-gray-500 mt-2">Atau unggah gambar untuk mendeteksi nama makanan secara otomatis.</p>
+                            <div id="image-uploader" class="upload-box mt-2 p-4 rounded-lg text-center cursor-pointer">
+                                <input type="file" id="file-input" class="hidden" accept="image/*">
+                                <div id="upload-prompt">
+                                    <p class="text-sm text-gray-600">Klik untuk memilih gambar</p>
+                                </div>
+                                 <div id="image-preview-container" class="hidden items-center justify-center">
+                                    <img id="image-preview" src="#" alt="Pratinjau Gambar" class="max-h-20 mr-4 rounded-lg shadow-md">
+                                    <button id="change-image-btn" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Ganti gambar</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Langkah 2: Pilih Gaya -->
+                        <div>
+                            <h2 class="text-xl font-semibold mb-3"><span class="bg-indigo-600 text-white rounded-full w-8 h-8 inline-flex items-center justify-center mr-2">2</span> Pilih Gaya Visual</h2>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                               <div title="Gaya dramatis dan profesional seperti di film.">
+                                    <input type="radio" name="style" id="style-pro-photographer" value="pro-photographer" class="hidden" checked>
+                                    <label for="style-pro-photographer" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Fotografer Pro</span>
+                                        <span class="text-xs block text-gray-500">Sudut & Cahaya Kreatif</span>
+                                    </label>
+                                </div>
+                                 <div title="Menangkap momen aksi seperti percikan air atau taburan bumbu.">
+                                    <input type="radio" name="style" id="style-motion-frozen" value="motion-frozen" class="hidden">
+                                    <label for="style-motion-frozen" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Gerak Beku</span>
+                                        <span class="text-xs block text-gray-500">Aksi & Percikan</span>
+                                    </label>
+                                </div>
+                                <div title="Suasana dramatis dan elegan, mirip lukisan still life.">
+                                    <input type="radio" name="style" id="style-dark-moody" value="dark-moody" class="hidden">
+                                    <label for="style-dark-moody" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Dark & Moody</span>
+                                        <span class="text-xs block text-gray-500">Gaya Lukisan</span>
+                                    </label>
+                                </div>
+                                <div title="Kesan alami, segar, dan 'langsung dari kebun'.">
+                                    <input type="radio" name="style" id="style-rustic" value="rustic" class="hidden">
+                                    <label for="style-rustic" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Rustic</span>
+                                        <span class="text-xs block text-gray-500">Farm-to-Table</span>
+                                    </label>
+                                </div>
+                                <div title="Fokus pada kesederhanaan, kebersihan, dan ruang kosong.">
+                                    <input type="radio" name="style" id="style-minimalist" value="minimalist" class="hidden">
+                                    <label for="style-minimalist" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Minimalis</span>
+                                        <span class="text-xs block text-gray-500">Bersih & Elegan</span>
+                                    </label>
+                                </div>
+                                <div title="Menambahkan sentuhan manusia agar terasa lebih hidup dan bercerita.">
+                                    <input type="radio" name="style" id="style-lifestyle" value="lifestyle" class="hidden">
+                                    <label for="style-lifestyle" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Gaya Hidup</span>
+                                        <span class="text-xs block text-gray-500">Sentuhan Manusia</span>
+                                    </label>
+                                </div>
+                                <div title="Tampilan mewah dan dramatis dengan pencahayaan sinematik.">
+                                    <input type="radio" name="style" id="style-cinematic" value="cinematic" class="hidden">
+                                    <label for="style-cinematic" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Sinematik</span>
+                                        <span class="text-xs block text-gray-500">Mewah & Dramatis</span>
+                                    </label>
+                                </div>
+                                <div title="Detail tekstur yang luar biasa tajam dan nyata.">
+                                    <input type="radio" name="style" id="style-hyper-realistic" value="hyper-realistic" class="hidden">
+                                    <label for="style-hyper-realistic" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Hiper-Realistis</span>
+                                        <span class="text-xs block text-gray-500">Sangat Detail</span>
+                                    </label>
+                                </div>
+                                 <div title="Cerah, bersih, dan sangat menggugah selera seperti iklan majalah.">
+                                    <input type="radio" name="style" id="style-advertising" value="advertising" class="hidden">
+                                    <label for="style-advertising" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Gaya Iklan</span>
+                                        <span class="text-xs block text-gray-500">Cerah & Menggugah</span>
+                                    </label>
+                                </div>
+                                <div title="Warna-warni cerah dengan bayangan tegas dan nuansa grafis.">
+                                    <input type="radio" name="style" id="style-pop-art" value="pop-art" class="hidden">
+                                    <label for="style-pop-art" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Pop Art</span>
+                                        <span class="text-xs block text-gray-500">Cerah & Geometris</span>
+                                    </label>
+                                </div>
+                                <div title="Meniru kamera & lensa asli untuk realisme maksimal.">
+                                    <input type="radio" name="style" id="style-camera-specs" value="camera-specs" class="hidden">
+                                    <label for="style-camera-specs" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Spesifikasi Kamera</span>
+                                        <span class="text-xs block text-gray-500">Simulasi Realistis</span>
+                                    </label>
+                                </div>
+                                 <div title="Makanan seolah-olah keluar dari layar smartphone.">
+                                    <input type="radio" name="style" id="style-poster-3d" value="poster-3d" class="hidden">
+                                    <label for="style-poster-3d" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Poster Iklan 3D</span>
+                                        <span class="text-xs block text-gray-500">Keluar dari Layar</span>
+                                    </label>
+                                </div>
+                                <div title="Menempatkan produk dalam suasana fantasi yang magis.">
+                                    <input type="radio" name="style" id="style-product-fantasy" value="product-fantasy" class="hidden">
+                                    <label for="style-product-fantasy" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Fantasi Produk</span>
+                                        <span class="text-xs block text-gray-500">Magis & Sureal</span>
+                                    </label>
+                                </div>
+                                <div title="Gaya iklan modern untuk minuman kekinian.">
+                                    <input type="radio" name="style" id="style-dynamic-drink" value="dynamic-drink" class="hidden">
+                                    <label for="style-dynamic-drink" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Minuman Dinamis</span>
+                                        <span class="text-xs block text-gray-500">Iklan Minuman</span>
+                                    </label>
+                                </div>
+                                <div title="Menggabungkan dua gambar menjadi satu karya seni yang puitis.">
+                                    <input type="radio" name="style" id="style-double-exposure" value="double-exposure" class="hidden">
+                                    <label for="style-double-exposure" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Eksposur Ganda</span>
+                                        <span class="text-xs block text-gray-500">Artistik & Konseptual</span>
+                                    </label>
+                                </div>
+                                 <div title="Gabungan semua teknik terbaik untuk foto komersial.">
+                                    <input type="radio" name="style" id="style-commercial-perfect" value="commercial-perfect" class="hidden">
+                                    <label for="style-commercial-perfect" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Komersial Sempurna</span>
+                                        <span class="text-xs block text-gray-500">Gaya Pamungkas</span>
+                                    </label>
+                                </div>
+                                <div title="Poster promosi premium dengan nuansa dramatis dan mewah.">
+                                    <input type="radio" name="style" id="style-premium-poster" value="premium-poster" class="hidden">
+                                    <label for="style-premium-poster" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Poster Premium</span>
+                                        <span class="text-xs block text-gray-500">Mewah & Dramatis</span>
+                                    </label>
+                                </div>
+                                <div title="Iklan billboard 3D yang epik di tengah kota.">
+                                    <input type="radio" name="style" id="style-epic-billboard" value="epic-billboard" class="hidden">
+                                    <label for="style-epic-billboard" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Billboard 3D Epik</span>
+                                        <span class="text-xs block text-gray-500">Iklan Megah</span>
+                                    </label>
+                                </div>
+                                <div title="Gaya iklan street food yang penuh energi dengan efek api.">
+                                    <input type="radio" name="style" id="style-fiery-energy" value="fiery-energy" class="hidden">
+                                    <label for="style-fiery-energy" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Energi Membara</span>
+                                        <span class="text-xs block text-gray-500">Api & Rempah</span>
+                                    </label>
+                                </div>
+                                <div title="Fokus pada proses memanggang dengan api dan asap yang dramatis.">
+                                    <input type="radio" name="style" id="style-grill-master" value="grill-master" class="hidden">
+                                    <label for="style-grill-master" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Gaya Panggangan</span>
+                                        <span class="text-xs block text-gray-500">Api & Asap</span>
+                                    </label>
+                                </div>
+                                <div title="Menampilkan setiap bahan makanan yang melayang secara artistik.">
+                                    <input type="radio" name="style" id="style-levitation" value="levitation" class="hidden">
+                                    <label for="style-levitation" class="radio-label p-4 rounded-lg block cursor-pointer text-center">
+                                        <span class="font-semibold text-base">Levitasi Bahan</span>
+                                        <span class="text-xs block text-gray-500">Dekonstruksi Dinamis</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Langkah 3: Generate & Reset -->
+                        <div>
+                             <h2 class="text-xl font-semibold mb-3"><span class="bg-indigo-600 text-white rounded-full w-8 h-8 inline-flex items-center justify-center mr-2">3</span> Buat Prompt</h2>
+                             <div id="api-key-notice" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded-md">
+                                <p class="font-bold">Perhatian!</p>
+                                <p>Anda belum mengatur API Key. Silakan masukkan API Key di <button id="open-settings-from-notice" class="font-bold underline hover:text-yellow-800">pengaturan</button> untuk melanjutkan.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button id="generate-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center disabled:bg-gray-300 disabled:cursor-not-allowed">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-magic mr-2" viewBox="0 0 16 16">
+                                        <path d="M9.5 2.672a.5.5 0 1 0 1 0V.843a.5.5 0 0 0-1 0v1.829Zm4.5.035A.5.5 0 0 0 13.293 2L12 3.293a.5.5 0 1 0 .707.707L14 2.707a.5.5 0 0 0 0-.707ZM7.293 4L8 3.293a.5.5 0 1 0-.707-.707L6.586 3.5a.5.5 0 0 0 0 .707l.707.707a.5.5 0 0 0 .707 0L8.707 4a.5.5 0 0 0 0-.707L8 2.586a.5.5 0 1 0-.707.707L8.586 4.5a.5.5 0 0 0 .707 0l.707-.707a.5.5 0 0 0 0-.707L8.707 2.5a.5.5 0 0 0-.707 0L6.586 4H4.5a.5.5 0 0 0 0 1h2.086l-6.5 6.5a.5.5 0 0 0 0 .707l.707.707a.5.5 0 0 0 .707 0l6.5-6.5V11.5a.5.5 0 0 0 1 0V9.414l6.5 6.5a.5.5 0 0 0 .707 0l.707-.707a.5.5 0 0 0 0-.707l-6.5-6.5H11.5a.5.5 0 0 0 0-1H9.414l-6.5-6.5a.5.5 0 0 0-.707 0L1.5 3.207a.5.5 0 0 0 0 .707l6.5 6.5V11.5a.5.5 0 0 0 1 0V9.414l6.5 6.5a.5.5 0 0 0 .707 0l.707-.707a.5.5 0 0 0 0-.707l-6.5-6.5H11.5a.5.5 0 1 0 0-1H9.414l-1.829-1.828a.5.5 0 0 0-.707 0L6.172 6H4.5a.5.5 0 1 0 0 1h1.672l.707.707a.5.5 0 0 0 .707 0l.707-.707a.5.5 0 0 0 0-.707L6.879 5H4.5a.5.5 0 0 0 0 1h2.379l-1 1a.5.5 0 0 0 0 .707l.707.707a.5.5 0 0 0 .707 0l1-1h.586a.5.5 0 0 0 .354-.146L10.5 6.5a.5.5 0 0 0 0-.707L9.793 5.086a.5.5 0 0 0-.707 0L8.379 5.793a.5.5 0 0 0 0 .707l.707.707a.5.5 0 0 0 .707 0L10.5 6.5a.5.5 0 0 0 0-.707L9.793 5.086a.5.5 0 0 0-.707 0L8.379 5.793a.5.5 0 0 0 0 .707l.707.707a.5.5 0 0 0 .707 0L11.207 5H13.5a.5.5 0 0 0 0-1H11.207l.5-.5a.5.5 0 0 0 0-.707l-.707-.707a.5.5 0 0 0-.707 0l-.5.5V.843a.5.5 0 0 0-1 0v1.829Z"/>
+                                    </svg>
+                                    <span>Buat Prompt</span>
+                                </button>
+                                <button id="reset-btn" class="p-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors" title="Reset Proyek">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/>
+                                        <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kolom Output -->
+                    <div class="bg-gray-100 rounded-lg flex flex-col p-4 min-h-[400px]">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Prompt yang Dihasilkan:</h3>
+                        <div class="relative flex-grow">
+                             <textarea id="prompt-output" readonly class="w-full h-full p-3 bg-white border border-gray-200 rounded-md resize-none focus:outline-none" placeholder="Prompt detail akan muncul di sini..."></textarea>
+                             <button id="copy-btn" class="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-3 rounded-md text-sm">
+                                Salin
+                             </button>
+                             <span id="copy-feedback" class="absolute top-2 right-2 bg-green-500 text-white font-semibold py-1 px-3 rounded-md text-sm opacity-0 pointer-events-none copy-btn-feedback">Tersalin!</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modal Pengaturan -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-lg relative">
+            <button id="close-settings-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                  <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                </svg>
+            </button>
+            <h2 class="text-2xl font-bold title-font mb-4">Pengaturan API Key</h2>
+            <p class="text-gray-600 mb-6">Masukkan API Key Anda dari Google AI Studio untuk menggunakan aplikasi ini.</p>
             
-            <div class="p-8 md:p-12">
-                 <!-- API Key Notice -->
-                <div id="api-key-notice" class="hidden relative mb-6 bg-yellow-500/20 border border-yellow-500 text-yellow-300 px-4 py-3 rounded-lg text-center text-sm flex justify-between items-center">
-                    <span>Harap masukkan API Key Google AI Studio Anda di menu Pengaturan.</span>
-                    <button id="close-notice-btn" class="ml-4 text-xl font-bold">&times;</button>
-                </div>
+            <div class="mb-4">
+                <label for="api-key-input" class="block text-gray-700 font-medium mb-2">Google AI Studio API Key</label>
+                <input type="password" id="api-key-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div class="flex justify-between items-center">
+                <button id="delete-api-key-btn" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">Hapus Key</button>
+                <button id="save-api-key-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                    <span id="save-btn-text">Simpan Key</span>
+                    <svg id="save-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </div>
+             <p id="settings-feedback" class="text-sm mt-4 text-center"></p>
+        </div>
+    </div>
+
+    <!-- Modal Bantuan -->
+     <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-2xl relative">
+            <button id="close-help-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                  <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                </svg>
+            </button>
+            <div class="help-modal-content pr-4">
+                <h2 class="text-2xl font-bold title-font mb-4">Panduan Pengguna FotoFood</h2>
                 
-                <header class="text-center mb-8">
-                    <p class="text-indigo-300 text-md">Buat prompt Gambar & Video AI yang menakjubkan.</p>
-                </header>
-
-                <!-- Input Form -->
                 <div class="space-y-6">
-                    <!-- Mode Toggle -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Pilih Mode</label>
-                        <div class="flex bg-gray-800 border border-gray-700 rounded-lg p-1">
-                            <button id="mode-image-btn" class="w-1/2 py-2 rounded-md text-sm font-semibold transition-colors toggle-btn-active">Gambar</button>
-                            <button id="mode-video-btn" class="w-1/2 py-2 rounded-md text-sm font-semibold transition-colors toggle-btn-inactive">Video</button>
+                    <!-- Bagian API Key -->
+                    <section>
+                        <h3 class="text-xl font-semibold mb-2 border-b pb-2">1. Cara Mendapatkan API Key Google AI Studio</h3>
+                        <p class="mb-3">API Key ini wajib Anda miliki agar aplikasi bisa berfungsi. Tenang, caranya mudah dan gratis!</p>
+                        <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li>Buka situs <a href="https://aistudio.google.com/" target="_blank" class="text-indigo-600 font-semibold hover:underline">Google AI Studio</a> di browser Anda.</li>
+                            <li>Login menggunakan akun Google Anda.</li>
+                            <li>Setelah masuk, cari dan klik tombol <strong>"Get API key"</strong> (biasanya ada di pojok kiri atas atau di menu).</li>
+                            <li>Klik tombol <strong>"Create API key in new project"</strong>.</li>
+                            <li>Sebuah kode panjang akan muncul. Itulah API Key Anda! <strong>Salin (copy)</strong> kode tersebut.</li>
+                            <li>Kembali ke aplikasi ini, klik ikon <strong>Pengaturan (roda gigi)</strong>, tempel (paste) kode tadi di kolom yang tersedia, lalu klik <strong>Simpan</strong>.</li>
+                        </ol>
+                    </section>
+
+                    <!-- Bagian Penggunaan Aplikasi -->
+                    <section>
+                        <h3 class="text-xl font-semibold mb-2 border-b pb-2">2. Cara Menggunakan Aplikasi</h3>
+                        <p class="mb-3">Aplikasi ini dirancang untuk membuat "resep" atau prompt teks yang bisa Anda gunakan di platform pembuat gambar AI (seperti Midjourney, Stable Diffusion, dll).</p>
+                         <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><strong>Langkah 1: Masukkan Nama Makanan:</strong> Ketik nama makanan atau produk Anda. Anda juga bisa unggah gambar, dan aplikasi akan mencoba menebak namanya dari nama file.</li>
+                            <li><strong>Langkah 2: Pilih Gaya Visual:</strong> Pilih salah satu gaya yang paling sesuai dengan imajinasi Anda. Setiap gaya akan menghasilkan "resep" prompt yang berbeda.</li>
+                            <li><strong>Langkah 3: Buat & Salin Prompt:</strong> Klik tombol "Buat Prompt". Hasilnya akan muncul di kotak sebelah kanan. Gunakan tombol "Salin" untuk menyalinnya.</li>
+                             <li><strong>Tombol Reset:</strong> Gunakan tombol dengan ikon panah melingkar untuk membersihkan semua input dan memulai proyek baru dari awal.</li>
+                        </ul>
+                    </section>
+                    
+                    <!-- Bagian Penjelasan Gaya -->
+                    <section>
+                        <h3 class="text-xl font-semibold mb-2 border-b pb-2">3. Penjelasan Gaya Visual</h3>
+                        <p class="mb-3">Setiap gaya memiliki keunikan. Berikut penjelasannya:</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Fotografer Pro:</strong> Hasil jepretan profesional dengan sudut dan pencahayaan yang dramatis.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Gerak Beku:</strong> Menangkap aksi cipratan air atau bahan yang jatuh dengan sangat tajam.
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Dark & Moody:</strong> Suasana gelap, misterius, dan elegan seperti lukisan klasik.
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Rustic:</strong> Kesan alami, hangat, dan "pedesaan" dengan properti kayu dan keramik.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Minimalis:</strong> Tampilan bersih, sederhana, dan modern dengan latar belakang polos.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Gaya Hidup:</strong> Menampilkan sentuhan manusia (misal: tangan) untuk membuatnya lebih hidup.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Sinematik:</strong> Seperti adegan dari film dengan warna dan pencahayaan yang khas.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Hiper-Realistis:</strong> Fokus pada detail tekstur yang sangat tajam dan nyata dari jarak dekat.
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Gaya Iklan:</strong> Cerah, bersih, dan sangat menggugah selera seperti iklan di majalah.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Pop Art:</strong> Menggunakan warna-warni cerah dan bayangan tegas untuk nuansa grafis.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Spesifikasi Kamera:</strong> Meniru hasil dari kamera dan lensa asli untuk realisme maksimal.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Poster Iklan 3D:</strong> Efek 3D di mana makanan seolah-olah keluar dari layar smartphone.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Fantasi Produk:</strong> Menggabungkan produk dengan lingkungan fantasi yang magis dan sureal.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Minuman Dinamis:</strong> Gaya iklan modern yang fokus pada aksi cipratan minuman kekinian.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Eksposur Ganda:</strong> Menggabungkan siluet makanan dengan gambar lain di dalamnya secara artistik.
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Komersial Sempurna:</strong> Resep pamungkas yang menggabungkan semua teknik terbaik untuk iklan.
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Poster Premium:</strong> Poster promosi dengan nuansa mewah, hangat, dan dramatis.
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Billboard 3D Epik:</strong> Iklan megah di mana makanan "meledak" keluar dari billboard di tengah kota.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Energi Membara:</strong> Gaya penuh aksi dengan efek api dan rempah, cocok untuk makanan pedas.
+                            </div>
+                             <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Gaya Panggangan:</strong> Fokus pada proses memanggang dengan api, asap, dan bekas panggangan.
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <strong class="font-semibold text-gray-900">Levitasi Bahan:</strong> Menampilkan setiap bahan makanan yang melayang secara artistik.
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Image Upload Section (Image Mode Only) -->
-                    <div id="image-upload-section">
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Unggah Gambar Asli (Opsional)</label>
-                        <div id="image-preview-container" class="hidden relative w-full h-48 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center mb-4">
-                            <img id="image-preview" src="#" alt="Pratinjau Gambar" class="max-h-full max-w-full object-contain rounded-md"/>
-                            <button id="remove-image-btn" class="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1.5 hover:bg-black/80 transition-all">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>
-                            </button>
-                        </div>
-                        <label for="image-upload" id="upload-label" class="cursor-pointer w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-3 px-4 rounded-lg transition duration-200">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
-                            Pilih Gambar
-                        </label>
-                        <input type="file" id="image-upload" accept="image/*">
-                    </div>
-
-                    <div>
-                        <label for="food-input" class="block text-sm font-medium text-gray-300 mb-2">Nama Makanan / Minuman</label>
-                        <input type="text" id="food-input" class="w-full bg-gray-900/80 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Contoh: Burger Keju Meleleh, Kopi Susu...">
-                    </div>
-
-                    <div>
-                        <label for="style-select" class="block text-sm font-medium text-gray-300 mb-2">Pilih Gaya Visual</label>
-                        <select id="style-select" class="w-full bg-gray-900/80 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200">
-                            <!-- Options will be populated by JS -->
-                        </select>
-                    </div>
-
-                    <button id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-500 shadow-lg">
-                        Buat Prompt
-                    </button>
-                </div>
-
-                <!-- Output Section -->
-                <div id="output-container" class="mt-8 hidden">
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Prompt yang Dihasilkan:</label>
-                    <div class="relative">
-                        <textarea id="output-prompt" readonly class="w-full h-56 bg-gray-900 border border-gray-700 rounded-lg p-4 text-gray-300 text-sm leading-relaxed resize-none"></textarea>
-                        <button id="copy-btn" class="absolute top-3 right-3 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-1 px-3 rounded-md text-xs transition duration-200">
-                            Salin
-                        </button>
-                    </div>
-                     <p id="usage-note" class="text-xs text-gray-400 mt-2 hidden">
-                        *Salin teks ini dan gunakan bersama gambar yang Anda unggah di platform AI pilihan Anda.
-                    </p>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-        <div class="w-full max-w-md bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 p-8 m-4">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold title-font">Pengaturan</h2>
-                <button id="close-settings-modal-btn" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label for="api-key-input" class="block text-sm font-medium text-gray-300 mb-2">Google AI Studio API Key</label>
-                    <input type="password" id="api-key-input" class="w-full bg-gray-900/80 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200" placeholder="Masukkan API Key Anda">
-                </div>
-                <p id="settings-feedback" class="text-sm text-center hidden"></p>
-                <div class="flex gap-4">
-                    <button id="delete-api-key-btn" class="w-full bg-red-600/80 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200">Hapus</button>
-                    <button id="save-api-key-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200">Simpan</button>
+                    </section>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Help Modal -->
-    <div id="help-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-        <div class="w-full max-w-2xl bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 m-4 flex flex-col" style="max-height: 90vh;">
-            <div class="flex justify-between items-center p-6 border-b border-gray-700">
-                <h2 class="text-2xl font-bold title-font">Bantuan & Panduan</h2>
-                <button id="close-help-modal-btn" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
-            </div>
-            <div class="p-6 overflow-y-auto custom-scrollbar space-y-8">
-                <!-- Section 1: API Key Tutorial -->
-                <section>
-                    <h3 class="text-xl font-bold text-indigo-300 mb-4">Cara Mendapatkan API Key Google AI Studio</h3>
-                    <div class="space-y-3 text-gray-300 text-sm leading-relaxed">
-                        <p>API Key ini seperti "kunci" pribadi Anda untuk bisa menggunakan teknologi AI dari Google. Tenang, caranya mudah dan gratis!</p>
-                        <ol class="list-decimal list-inside space-y-2">
-                            <li>Buka browser dan kunjungi situs resmi Google AI Studio di <a href="https://aistudio.google.com/" target="_blank" class="text-indigo-400 hover:underline">aistudio.google.com</a>.</li>
-                            <li>Login menggunakan akun Google (Gmail) Anda.</li>
-                            <li>Setelah masuk, klik tombol <span class="font-bold bg-gray-700 px-2 py-1 rounded">"Get API key"</span> di menu sebelah kiri.</li>
-                            <li>Klik tombol <span class="font-bold bg-gray-700 px-2 py-1 rounded">"Create API key in new project"</span>.</li>
-                            <li>Sebuah kode panjang akan muncul. Klik ikon <span class="font-bold">"Copy"</span> (salin) di sebelahnya.</li>
-                            <li>Kembali ke aplikasi FotoFood, klik ikon <span class="font-bold">Pengaturan (roda gigi)</span>, tempel kode tadi, lalu klik <span class="font-bold">"Simpan"</span>. Selesai!</li>
-                        </ol>
-                    </div>
-                </section>
-                <section>
-                    <h3 class="text-xl font-bold text-indigo-300 mb-4">Cara Menggunakan Aplikasi</h3>
-                     <div class="space-y-3 text-gray-300 text-sm leading-relaxed">
-                        <ol class="list-decimal list-inside space-y-2">
-                            <li><span class="font-bold">Pilih Mode:</span> Pilih <span class="font-bold bg-gray-700 px-2 py-1 rounded">"Gambar"</span> untuk membuat gambar, atau <span class="font-bold bg-gray-700 px-2 py-1 rounded">"Video"</span> untuk membuat klip pendek.</li>
-                            <li><span class="font-bold">Masukkan Nama Makanan/Minuman:</span> Ketik nama subjek Anda.</li>
-                            <li><span class="font-bold">Pilih Gaya Visual:</span> Pilih gaya yang paling sesuai dengan imajinasi Anda dari daftar.</li>
-                            <li><span class="font-bold">Buat & Salin Prompt:</span> Klik <span class="font-bold bg-indigo-600 px-2 py-1 rounded">"Buat Prompt"</span>, lalu klik <span class="font-bold">"Salin"</span>.</li>
-                            <li><span class="font-bold">Gunakan:</span> Tempel (paste) prompt yang sudah disalin ke platform AI generator favorit Anda.</li>
-                        </ol>
-                    </div>
-                </section>
-                <!-- NEW Section: Style Explanations -->
-                <section>
-                    <h3 class="text-xl font-bold text-indigo-300 mb-4">Penjelasan Setiap Gaya Visual</h3>
-                    <div class="space-y-6 text-gray-300 text-sm leading-relaxed">
-                        <div>
-                            <h4 class="font-bold text-lg text-indigo-400 mb-2">Gaya Gambar</h4>
-                            <ul class="list-disc list-inside space-y-2">
-                                <li><span class="font-bold">Gaya 3D Pixar:</span> Membuat makanan menjadi karakter 3D yang lucu dan imut seperti di film animasi.</li>
-                                <li><span class="font-bold">Fotografi Knolling:</span> Menata makanan dan bahan-bahannya dengan sangat rapi dari sudut pandang atas.</li>
-                                <li><span class="font-bold">Gaya Ukiyo-e Jepang:</span> Mengubah foto menjadi lukisan cukil kayu tradisional Jepang yang artistik.</li>
-                                <li><span class="font-bold">Desain Stiker:</span> Menghasilkan gambar bergaya stiker vinil dengan garis pinggir putih yang tebal.</li>
-                                <li><span class="font-bold">Diorama Isometrik:</span> Menempatkan makanan di dalam sebuah miniatur ruangan 3D yang detail.</li>
-                                <li><span class="font-bold">Sentuhan Fotografer Pro:</span> Menghasilkan foto berkualitas majalah dengan pencahayaan dan komposisi profesional.</li>
-                                <li><span class="font-bold">Dramatic Action Shot:</span> Foto dramatis dengan efek saus meleleh atau bahan berhamburan.</li>
-                                <li><span class="font-bold">Dan masih banyak lagi</span> untuk Anda eksplorasi!</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-lg text-indigo-400 mb-2">Gaya Video</h4>
-                            <ul class="list-disc list-inside space-y-2">
-                                <li><span class="font-bold">Tampilan Iklan Minuman:</span> Video close-up super lambat yang fokus pada detail cairan, embun, dan gelembung.</li>
-                                <li><span class="font-bold">Ledakan Rasa:</span> Video dramatis yang menampilkan ledakan bubuk atau cairan berwarna di sekitar produk.</li>
-                                <li><span class="font-bold">Nikmat Sampai Belepotan:</span> Video close-up yang menunjukkan ekspresi nikmat saat makan sampai berantakan.</li>
-                                <li><span class="font-bold">Tak Ada yang Tersisa:</span> Video lucu saat remah yang jatuh diambil dan dimakan saking enaknya.</li>
-                                <li><span class="font-bold">Sampai Tetes Terakhir:</span> Video sinematik saat tetesan terakhir minuman jatuh ke mulut.</li>
-                                <li><span class="font-bold">Direbut Hewan Kecil:</span> Video komedi saat remah makanan direbut oleh hewan kecil.</li>
-                                <li><span class="font-bold">Viral Snack Attack:</span> Video renyah dan memuaskan yang fokus pada suara dan tekstur snack.</li>
-                                <li><span class="font-bold">Super Segar / Refreshing Pour:</span> Video menuangkan minuman dingin ke gelas ber-es yang sangat menyegarkan.</li>
-                                <li><span class="font-bold">Gaya Wes Anderson:</span> Video artistik dengan komposisi simetris dan warna-warna pastel yang khas.</li>
-                                <li><span class="font-bold">ASMR Extreme Close-Up:</span> Fokus pada suara-suara makanan yang memuaskan (renyah, desis, dll).</li>
-                                <li><span class="font-bold">Dan masih banyak lagi</span> untuk Anda coba!</li>
-                            </ul>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </div>
-    </div>
-
+    <!-- Firebase SDK -->
     <script type="module">
-        // --- Firebase Initialization ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDCE-DcPbpQvh3tF96KLQzE39sHzwlQAHY",
             authDomain: "photofood-6b369.firebaseapp.com",
@@ -284,318 +484,283 @@
             appId: "1:643251079600:web:8245f6ccf3bb827883ae75"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // --- DOM Elements ---
-        const loginScreen = document.getElementById('login-screen');
-        const mainApp = document.getElementById('main-app');
-        const emailInput = document.getElementById('email-input');
-        const passwordInput = document.getElementById('password-input');
-        const loginBtn = document.getElementById('login-btn');
+        // DOM Elements
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app-container');
+        const loginForm = document.getElementById('login-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
         const loginError = document.getElementById('login-error');
         const logoutBtn = document.getElementById('logout-btn');
-        const settingsBtn = document.getElementById('settings-btn');
-        const helpBtn = document.getElementById('help-btn');
 
-        const foodInput = document.getElementById('food-input');
-        const styleSelect = document.getElementById('style-select');
-        const generateBtn = document.getElementById('generate-btn');
-        const outputContainer = document.getElementById('output-container');
-        const outputPrompt = document.getElementById('output-prompt');
-        const copyBtn = document.getElementById('copy-btn');
-        
-        const modeImageBtn = document.getElementById('mode-image-btn');
-        const modeVideoBtn = document.getElementById('mode-video-btn');
-        
-        const imageUploadSection = document.getElementById('image-upload-section');
-        const imageUpload = document.getElementById('image-upload');
-        const uploadLabel = document.getElementById('upload-label');
+        // Login Logic
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            loginError.textContent = '';
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // Signed in 
+                    const user = userCredential.user;
+                    // console.log('Login successful:', user);
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    let errorMessage = "Terjadi kesalahan. Silakan coba lagi.";
+                    if (errorCode === 'auth/wrong-password' || errorCode === 'auth/user-not-found' || errorCode === 'auth/invalid-credential') {
+                        errorMessage = 'Email atau password salah.';
+                    }
+                    loginError.textContent = errorMessage;
+                    console.error('Login error:', error);
+                });
+        });
+
+        // Logout Logic
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth).catch((error) => {
+                console.error('Logout error:', error);
+            });
+        });
+
+        // Auth State Observer
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in
+                loginContainer.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                // Panggil fungsi pengecekan API Key saat user berhasil login
+                window.checkApiKeyStatus();
+            } else {
+                // User is signed out
+                loginContainer.classList.remove('hidden');
+                appContainer.classList.add('hidden');
+                // Membersihkan kolom input dan pesan error saat logout
+                emailInput.value = '';
+                passwordInput.value = '';
+                loginError.textContent = '';
+            }
+        });
+
+    </script>
+
+    <script>
+        // Elemen DOM Aplikasi
+        const foodNameInput = document.getElementById('food-name-input');
+        const fileInput = document.getElementById('file-input');
+        const imageUploader = document.getElementById('image-uploader');
+        const uploadPrompt = document.getElementById('upload-prompt');
         const imagePreviewContainer = document.getElementById('image-preview-container');
         const imagePreview = document.getElementById('image-preview');
-        const removeImageBtn = document.getElementById('remove-image-btn');
-        const usageNote = document.getElementById('usage-note');
+        const changeImageBtn = document.getElementById('change-image-btn');
+        const generateBtn = document.getElementById('generate-btn');
+        const promptOutput = document.getElementById('prompt-output');
+        const copyBtn = document.getElementById('copy-btn');
+        const copyFeedback = document.getElementById('copy-feedback');
+        const resetBtn = document.getElementById('reset-btn');
 
-        // Modal Elements
+        // Elemen DOM Pengaturan
+        const settingsBtn = document.getElementById('settings-btn');
         const settingsModal = document.getElementById('settings-modal');
-        const closeSettingsModalBtn = document.getElementById('close-settings-modal-btn');
+        const closeSettingsModalBtn = document.getElementById('close-settings-modal');
         const apiKeyInput = document.getElementById('api-key-input');
         const saveApiKeyBtn = document.getElementById('save-api-key-btn');
         const deleteApiKeyBtn = document.getElementById('delete-api-key-btn');
-        const settingsFeedback = document.getElementById('settings-feedback');
-        
-        const helpModal = document.getElementById('help-modal');
-        const closeHelpModalBtn = document.getElementById('close-help-modal-btn');
-
-        // API Key Notice Elements
         const apiKeyNotice = document.getElementById('api-key-notice');
-        const closeNoticeBtn = document.getElementById('close-notice-btn');
+        const openSettingsFromNoticeBtn = document.getElementById('open-settings-from-notice');
+        const settingsFeedback = document.getElementById('settings-feedback');
+        const saveBtnText = document.getElementById('save-btn-text');
+        const saveSpinner = document.getElementById('save-spinner');
 
-        // --- State ---
-        let currentMode = 'image';
-        let hasUploadedImage = false;
+        // Elemen DOM Bantuan
+        const helpBtn = document.getElementById('help-btn');
+        const helpModal = document.getElementById('help-modal');
+        const closeHelpModalBtn = document.getElementById('close-help-modal');
 
-        // --- Auth Logic ---
-        onAuthStateChanged(auth, user => {
-            if (user) {
-                loginScreen.classList.add('hidden');
-                mainApp.classList.remove('hidden');
-                updateUIForMode();
-                checkApiKey();
-            } else {
-                loginScreen.classList.remove('hidden');
-                mainApp.classList.add('hidden');
-            }
-        });
+        const API_KEY_STORAGE = 'googleAiApiKey';
 
-        loginBtn.addEventListener('click', async () => {
-            const email = emailInput.value;
-            const password = passwordInput.value;
-            loginError.classList.add('hidden');
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Logging in...';
-            if (!email || !password) {
-                loginError.textContent = 'Email dan password harus diisi.';
-                loginError.classList.remove('hidden');
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Login';
-                return;
-            }
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                loginError.textContent = 'Email atau password salah.';
-                loginError.classList.remove('hidden');
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Login';
-            }
-        });
+        // Fungsi untuk menampilkan/menyembunyikan modal
+        const openSettingsModal = () => {
+            apiKeyInput.value = localStorage.getItem(API_KEY_STORAGE) || '';
+            settingsModal.style.display = 'flex';
+        };
+        const closeSettingsModal = () => {
+            settingsModal.style.display = 'none';
+            settingsFeedback.textContent = '';
+        };
 
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                emailInput.value = '';
-                passwordInput.value = '';
-            } catch (error) {
-                console.error("Error signing out: ", error);
-            }
-        });
+        const openHelpModal = () => helpModal.style.display = 'flex';
+        const closeHelpModal = () => helpModal.style.display = 'none';
 
-        // --- Modal Logic (Settings & Help) ---
-        function setupModal(modal, openBtn, closeBtn) {
-            openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-            closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.add('hidden');
-                }
-            });
-        }
-        
-        setupModal(settingsModal, settingsBtn, closeSettingsModalBtn);
-        setupModal(helpModal, helpBtn, closeHelpModalBtn);
+        // Event listener untuk tombol pengaturan
+        settingsBtn.addEventListener('click', openSettingsModal);
+        openSettingsFromNoticeBtn.addEventListener('click', openSettingsModal);
+        closeSettingsModalBtn.addEventListener('click', closeSettingsModal);
 
-        // --- Settings Logic ---
-        async function validateApiKey(key) {
+        // Event listener untuk tombol bantuan
+        helpBtn.addEventListener('click', openHelpModal);
+        closeHelpModalBtn.addEventListener('click', closeHelpModal);
+
+        // Fungsi untuk memvalidasi API Key
+        const validateApiKey = async (key) => {
             const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`;
             try {
                 const response = await fetch(url);
                 return response.ok;
             } catch (error) {
-                console.error("API Key validation error:", error);
+                console.error("Validation request failed:", error);
                 return false;
             }
-        }
+        };
 
-        function checkApiKey() {
-            const apiKey = localStorage.getItem('googleApiKey');
-            apiKeyNotice.classList.toggle('hidden', !!apiKey);
-        }
-
-        saveApiKeyBtn.addEventListener('click', async () => {
+        // Fungsi untuk menyimpan, menghapus, dan mengecek API Key
+        const saveApiKey = async () => {
             const apiKey = apiKeyInput.value.trim();
-            settingsFeedback.classList.remove('hidden');
-            settingsFeedback.textContent = 'Memvalidasi kunci...';
-            settingsFeedback.classList.remove('text-red-400', 'text-green-400');
-            
             if (!apiKey) {
                 settingsFeedback.textContent = 'Kolom API Key tidak boleh kosong.';
-                settingsFeedback.classList.add('text-red-400');
+                settingsFeedback.className = 'text-red-600 text-sm mt-4 text-center';
                 return;
             }
+
+            // UI update for loading state
+            saveBtnText.textContent = 'Memvalidasi...';
+            saveSpinner.classList.remove('hidden');
+            saveApiKeyBtn.disabled = true;
+            deleteApiKeyBtn.disabled = true;
 
             const isValid = await validateApiKey(apiKey);
+            
+            // UI update back to normal
+            saveBtnText.textContent = 'Simpan Key';
+            saveSpinner.classList.add('hidden');
+            saveApiKeyBtn.disabled = false;
+            deleteApiKeyBtn.disabled = false;
 
             if (isValid) {
-                localStorage.setItem('googleApiKey', apiKey);
+                localStorage.setItem(API_KEY_STORAGE, apiKey);
                 settingsFeedback.textContent = 'API Key valid dan berhasil disimpan!';
-                settingsFeedback.classList.add('text-green-400');
+                settingsFeedback.className = 'text-green-600 text-sm mt-4 text-center';
                 setTimeout(() => {
-                    settingsModal.classList.add('hidden');
-                    checkApiKey();
+                    closeSettingsModal();
                 }, 1500);
+                window.checkApiKeyStatus();
             } else {
-                settingsFeedback.textContent = 'API Key tidak valid atau salah.';
-                settingsFeedback.classList.add('text-red-400');
+                settingsFeedback.textContent = 'API Key tidak valid. Silakan periksa kembali.';
+                settingsFeedback.className = 'text-red-600 text-sm mt-4 text-center';
             }
-        });
+        };
 
-        deleteApiKeyBtn.addEventListener('click', () => {
-            localStorage.removeItem('googleApiKey');
+        const deleteApiKey = () => {
+            localStorage.removeItem(API_KEY_STORAGE);
             apiKeyInput.value = '';
             settingsFeedback.textContent = 'API Key berhasil dihapus!';
-            settingsFeedback.classList.remove('hidden');
-            settingsFeedback.classList.add('text-green-400');
-            settingsFeedback.classList.remove('text-red-400');
+            settingsFeedback.className = 'text-green-600 text-sm mt-4 text-center';
             setTimeout(() => {
-                settingsModal.classList.add('hidden');
-                checkApiKey();
+                closeSettingsModal();
             }, 1500);
-        });
-        
-        closeNoticeBtn.addEventListener('click', () => apiKeyNotice.classList.add('hidden'));
-
-        // --- Prompt Templates ---
-        const imagePrompts = {
-            'street-food-ad-img': { name: 'Iklan Makanan Jalanan (Baru!)', generator: (food, hasImage) => `A hyper-realistic studio photograph of a sizzling [${food}] captured mid-air with dynamic energy. The scene is set against a dark black background, with flames and chili pepper flakes bursting behind the [${food}] to give a sense of intense heat and spice. Ingredients and drops of sauce float around in motion. The lighting is cinematic and warm, enhancing textures and freshness. Styled like a bold street food advertisement with vibrant colors, motion, and dramatic fire effects.` },
-            'beverage-ad-img': { name: 'Iklan Minuman Menyegarkan', generator: (food, hasImage) => hasImage ? `Transform the uploaded photo of [${food}] into an award-winning beverage advertisement. The shot is an extreme close-up, centered on the glass. We only see the vibrant liquid, perfect condensation beads on the frosted glass, and soft bubbles rising. Backlit by warm sunlight, casting a refreshing glow. Set against a clean, sky blue background. Hyper-realistic, 8K.` : `Award-winning beverage photography of [${food}]. An extreme close-up, centered shot of the chilled drink. We are so close we only see the vibrant liquid, condensation beads on the frosted glass, and soft golden bubbles rising slowly. Backlit by warm sunlight, casting a refreshing glow. Clean, sky blue background. Hyper-realistic, 8K.` },
-            'sticker-design': { name: 'Desain Stiker', generator: (food, hasImage) => hasImage ? `Convert the uploaded photo of [${food}] into a die-cut vinyl sticker illustration. The design should be bold and graphic, with a thick white border around the subject. Isolated on a clean background. Vector art style, vibrant colors.` : `A die-cut vinyl sticker illustration of [${food}]. Bold and graphic design with a thick white border around the subject. Isolated on a clean background. Vector art style, vibrant colors.` },
-            'isometric-diorama': { name: 'Diorama Isometrik', generator: (food, hasImage) => hasImage ? `Place the uploaded [${food}] inside a tiny, cute, isometric 3D diorama of a kitchen or dining room. The room is highly detailed with miniature furniture. Soft, warm lighting. 3D render, low-poly, detailed miniature.` : `A tiny, cute, isometric 3D diorama of a kitchen featuring [${food}] as the centerpiece. The room is highly detailed with miniature furniture and accessories. Soft, warm lighting. 3D render, low-poly, detailed miniature.` },
-            'pro-photographer': { name: 'Sentuhan Fotografer Pro', generator: (food, hasImage) => hasImage ? `Using the uploaded photo as a reference, elevate this image of [${food}] to a professional, commercial standard. Re-compose the shot following the rule of thirds. Re-light the scene using a three-point lighting setup: a large softbox for soft key light, a subtle backlight for rim lighting and texture emphasis, and a reflector to fill shadows. Enhance details as if shot with a Phase One camera and a macro lens. Apply professional color grading for appetizing tones and use dodge and burn to make textures pop. The result should be clean, crisp, and hyper-realistic 8K quality.` : `Professional food photography of [${food}], meticulously styled and composed following the rule of thirds. Lit with a three-point lighting setup: a large softbox as the key light for soft, diffused illumination, a backlight to create a beautiful rim light effect and highlight steam, and a silver reflector to gently fill in shadows. Shot on a Phase One XF camera with an 80mm Schneider Kreuznach Blue Ring lens at f/4 for incredible detail and clarity. The final image is color graded with subtle, appetizing tones, and uses dodge and burn techniques to enhance textures. Commercial quality, hyper-realistic, 8k.` },
-            'dramatic-action': { name: 'Dramatic Action Shot', generator: (food, hasImage) => hasImage ? `Using the uploaded image as a reference, create a dramatic action shot of [${food}]. Emphasize ingredients overflowing or sauce dripping in a mouthwatering way. The shot must be captured mid-action. Use cinematic studio lighting with high contrast and soft shadows to create a fiery, intense mood. Add realistic steam. The final image must have macro lens detail, shallow depth of field, and photo-realistic 8K quality.` : `Dramatic close-up shot of [${food}], captured mid-action. Show ingredients overflowing or sauce dripping in a mouthwatering way. Use cinematic studio lighting with high contrast and soft shadows to create a fiery, intense mood with glowing embers in the background. Add realistic steam. Macro lens detail, shallow depth of field, photo-realistic 8K quality.` },
-            'cinematic-luxury': { name: 'Cinematic Luxury', generator: (food, hasImage) => hasImage ? `Using the uploaded image as a primary reference, transform this photo of [${food}] into a cinematic, luxury style. Keep the main dish recognizable but enhance the plating. Change the background to a bright, upscale restaurant, softly blurred, filled with stylish diners. The lighting should be soft natural window light with gentle shadows. Emulate a shot from a Sony a7R IV + 100mm f/2.8 Macro for creamy bokeh. Add an elegant table setting. ultra realistic, photorealistic, 8k.` : `Cinematic food photography featuring a surreal luxury dish with [${food}]. Sharp focus, soft natural window light, gentle shadows. Background: bright upscale restaurant, softly blurred. Shot on Sony a7R IV + 100mm f/2.8 Macro, f/2.8, ISO 200, 1/125s, shallow depth of field for creamy bokeh. Elegant table setting. ultra realistic, photorealistic, 8k.` },
-            'rustic-cozy': { name: 'Rustic & Cozy', generator: (food, hasImage) => hasImage ? `Take the uploaded image of [${food}] and recreate it with a cozy, rustic aesthetic. Place the dish on a handmade ceramic plate on a warm, wooden table. The lighting should feel like soft morning light next to a steamy window on a rainy day. Emphasize texture. Emulate a Canon EOS 5D Mark IV, 50mm f/1.8 lens for a warm, homely feeling.` : `Cozy, rustic food photography of [${food}] on a handmade ceramic plate. Warm, wooden table, soft morning light. Close-up shot, emphasizing texture. Shot with a Canon EOS 5D Mark IV, 50mm f/1.8 lens, shallow depth of field, warm tones, photorealistic.` },
-            'street-food-vibrant': { name: 'Street Food Vibrant', generator: (food, hasImage) => hasImage ? `Transform the uploaded image of [${food}] into a vibrant, dynamic street food scene. Place it in the context of a bustling night market stall with colorful neon lights in a motion-blurred background. Add steam rising from the food. The atmosphere should feel gritty and authentic. Emulate a Nikon Z7 II, 35mm f/1.8 lens to capture energy. High contrast, saturated colors.` : `Vibrant, dynamic action shot of [${food}] at a bustling night market stall. Motion blur background with colorful neon lights. Steam rising from the food. Sharp focus on the dish. Gritty, authentic atmosphere. Shot with a Nikon Z7 II, 35mm f/1.8 lens. High contrast, saturated colors, cinematic.` },
-            'dark-moody': { name: 'Dark & Moody', generator: (food, hasImage) => hasImage ? `Re-imagine the uploaded photo of [${food}] with a dark and moody theme. Place the dish on a dark slate platter. Use a dramatic, single-source Chiaroscuro lighting from the side to create deep shadows and highlight textures. The background should be dark and indistinct. The final image should have a painterly, atmospheric, and sophisticated quality. High detail.` : `Dark and moody food photography of [${food}] on a dark slate platter. Chiaroscuro lighting, single dramatic light source, deep shadows. Background is dark and indistinct. Rich, deep colors. Hasselblad X1D II, painterly quality, atmospheric, intense, highly detailed.` },
-            'claymation-style': { name: 'Gaya Claymation', generator: (food, hasImage) => hasImage ? `Recreate the uploaded photo of [${food}] as a charming 3D render in the style of claymation. The food should look like it's made from modeling clay, with visible fingerprints and tool marks to give it a handmade, tactile feel. Use soft studio lighting. Playful, whimsical, Aardman Animations style.` : `A charming 3D render of [${food}] in the style of claymation. The food should appear to be made of modeling clay, with visible fingerprints and tool marks for a handmade feel. Soft, studio lighting. The style should be reminiscent of Aardman Animations. Tactile, playful, and whimsical.` },
+            window.checkApiKeyStatus();
         };
-        const videoPrompts = {
-            'beverage-ad': { name: 'Tampilan Iklan Minuman', generator: (food) => `An 8-second, beautiful macro video of [${food}].\n--shot (0-8s): A single, continuous extreme close-up shot of the [${food}] in a glass. The camera is so close we only see the liquid, condensation beads on the frosted glass, and soft golden bubbles rising very slowly. The camera slowly and smoothly tracks upwards, following the bubbles.\n--style: Backlit by warm sunlight, casting a refreshing glow. Clean, simple, sky-blue background. Award-winning beverage videography, ultra-realistic, 8K.` },
-            'flavor-explosion': { name: 'Ledakan Rasa', generator: (food) => `An 8-second, ultra slow-motion video of [${food}], advertising style.\n--shot (0-3s): The [${food}] is perfectly centered, suspended mid-air against a clean, pure black background. The camera does a slow, dramatic orbit shot around it.\n--shot (3-6s): A powerful explosion of colorful powder (matching the food's flavor, e.g., red for chili, yellow for cheese) erupts from behind and around the [${food}]. The particles fly towards the camera in 240fps slow motion.\n--shot (6-8s): The shot holds on the [${food}] surrounded by the beautiful, frozen-in-time particle cloud. The text "${food.toUpperCase()}" appears in a sleek, modern, and sharp font.\n--style: High-end commercial look, cinematic studio lighting, C4D and Octane render style, exquisite details, 8K.` },
-            'messy-eating': { name: 'Nikmat Sampai Belepotan', generator: (food) => `A 7-second, highly realistic video capturing the pure enjoyment of eating [${food}].\n--shot (0-3s): Extreme close-up on a person's mouth taking a large, messy bite. Sauce and crumbs get on their face. The expression is pure bliss. Shot in slow motion (120fps).\n--shot (3-5s): A close-up shot of the person licking delicious seasoning or sauce off their fingers with satisfaction.\n--shot (5-7s): The person leans back, smiling, completely satisfied, with a little bit of food still messily on their face. The text "${food.toUpperCase()}" appears in a fun, bold, handwritten font.\n--style: Warm, natural lighting. Looks authentic and unscripted. Very realistic skin textures. Shot with a shallow depth of field to focus on the person and food.` },
-            'no-leftovers': { name: 'Tak Ada yang Tersisa', generator: (food) => `A 7-second video showing someone enjoying [${food}] so much, not a single crumb is wasted.\n--shot (0-3s): A satisfying bite is taken from the [${food}], causing some delicious crumbs or a drop of sauce to fall onto the clean table below. Slow motion.\n--shot (3-5s): A close-up shot of a finger deliberately picking up the fallen crumb from the table.\n--shot (5-7s): The finger brings the crumb to the person's mouth, followed by a subtle, satisfied smile. The text "Too good to waste" appears in a simple, clean font.\n--style: Clean, bright lighting. A feeling of genuine, relatable enjoyment. Realistic, high-detail shot.` },
-            'last-drop': { name: 'Sampai Tetes Terakhir', generator: (food) => `A 7-second, refreshing video of someone finishing a [${food}].\n--shot (0-3s): A close-up of a person confidently tilting a glass or bottle of [${food}] up to drink the last of it.\n--shot (3-6s): The camera does a dramatic slow zoom towards the person's mouth and the edge of the glass. The person's head is tilted back in anticipation.\n--shot (6-7s): An elegant, super slow-motion (240fps) extreme close-up of the single, last glistening drop of the beverage falling from the glass into their mouth. Followed by a satisfied sigh.\n--style: Clean, high-key lighting. Refreshing and satisfying mood. The shot is stylish and clean, not messy. Focus on the clarity of the liquid.`},
-            'stolen-by-animal': { name: 'Direbut Hewan Kecil', generator: (food) => `A 7-second, humorous and relatable video about a dropped piece of [${food}].\n--shot (0-3s): A slow-motion, close-up shot of a delicious crumb or piece of [${food}] falling from someone's hand onto a surface (table/floor).\n--shot (3-5s): A human finger enters the frame, moving slowly to pick up the crumb. Just as it's about to touch it...\n--shot (5-7s): ...a tiny ant (or a cat's paw, or a gecko) suddenly darts in, grabs the crumb, and runs away. The human finger is left pausing in mid-air. The text "Saking Enaknya!" appears in a playful font.\n--style: Bright, natural lighting. Looks like a candid, funny moment. High-detail macro shot.` },
-            'snack-attack': { name: 'Viral Snack Attack', generator: (food) => `A 7-second, viral-style video for [${food}].\n--shot (0-3s): A handful of [${food}] is dropped in slow-motion onto a clean, colorful surface. The pieces bounce and scatter in a satisfying way.\n--shot (3-5s): An extreme close-up shot of one piece of the snack being snapped in half, revealing the crunchy texture inside. The crunch sound is loud and satisfying (ASMR).\n--shot (5-7s): A quick zoom-out to show the pile of snacks. The text "${food.toUpperCase()}" appears with a punchy, modern animation.\n--style: Bright, high-contrast studio lighting. Vibrant, poppy colors. Energetic, fast-paced cuts. Focus on the CRUNCH sound.` },
-            'refreshing-pour': { name: 'Super Segar / Refreshing Pour', generator: (food) => `A 7-second, super refreshing video of [${food}].\n--shot (0-2s): Extreme close-up of a glass covered in cold condensation. A single drop of water slowly trickles down the side in slow motion.\n--shot (2-5s): The [${food}] is poured dynamically into the glass, splashing over crystal clear ice cubes. The camera follows the liquid as it fills the glass. Shot at 120fps.\n--shot (5-7s): The final shot of the full, glistening glass. A straw is placed inside, causing a final, satisfying clink of ice. The text "SEGAR!" appears in a clean, cool font.\n--style: Bright, high-key studio lighting. Cool blue and white color tones. Hyper-realistic liquid simulation. Extremely sharp and clean look.` },
-            'wes-anderson': { name: 'Gaya Wes Anderson', generator: (food) => `A 7-second video of [${food}] in the distinct aesthetic of a Wes Anderson film.\n--shot (0-7s): A single, perfectly centered top-down shot of the dish. A pair of hands enters the frame with precise, symmetrical movements to add a final garnish. The camera then does a quick, flat whip pan to the right to reveal the name "${food.toUpperCase()}" in a quirky, vintage serif font.\n--style: Perfectly symmetrical composition. A distinct, pastel color palette (e.g., mint green, pale yellow, soft pink). Flat, even lighting. Quirky, deadpan mood.` },
-            'asmr-closeup': { name: 'ASMR Extreme Close-Up', generator: (food) => `An 8-second ASMR video focusing on the sounds of [${food}].\n--shot (0-8s): A series of extreme macro shots. A knife slowly slicing through the food, or ice clinking in a glass, with the sound amplified. Someone taking a crunchy bite/sip, with the sound amplified. No music, only the natural sounds.\n--style: Very shallow depth of field. The lighting is focused only on the small area of action. The main focus is on capturing crisp, clear, and satisfying sounds (ASMR).` },
-            'hyperlapse-cooking': { name: 'Hyperlapse Cooking', generator: (food) => `A 6-second hyperlapse video showing the creation of [${food}].\n--shot (0-5s): A fast-paced time-lapse from a locked camera angle showing hands quickly preparing the dish/drink (chopping, mixing, pouring).\n--shot (5-6s): The video abruptly stops on the final, perfect dish. The text "${food.toUpperCase()}" appears instantly in a bold, clean font.\n--style: Fast motion, high energy. Bright, clean lighting. Satisfying and efficient feel.` },
-            'vlog-mukbang': { name: 'Gaya Vlog / Mukbang', generator: (food) => `A 7-second personal food vlog video of trying [${food}].\n--shot (0-2s): Handheld, point-of-view (POV) shot showing the food/drink on the table.\n--shot (2-5s): The camera lifts to show a person's genuine, happy reaction while taking the first bite/sip.\n--shot (5-7s): Quick zoom into the food/drink again. The text "${food.toUpperCase()} ENAK BANGET!" appears in a casual, handwritten font.\n--style: Natural lighting, shot on an iPhone, authentic vlogging style, minimal color grading.` },
-            'vintage-film': { name: 'Tampilan Film Vintage / Retro', generator: (food) => `A 6-second video of [${food}], stylized to look like a nostalgic 8mm home movie.\n--shot (0-6s): A single, continuous shot. Slow, slightly unsteady pan across the [${food}]. The camera drifts in and out of focus.\n--style: Heavy film grain, dust and scratches, light leaks on the edges of the frame. Warm, faded, sepia or Kodachrome color palette. Soft focus. The final video has a subtle frame shake and a soft vignette.` },
-            'macro-insect-view': { name: 'Dunia Makro / Sudut Pandang Serangga', generator: (food) => `A 7-second abstract, artistic video exploring [${food}] from an extreme macro perspective.\n--shot (0-4s): A probe lens shot, the camera glides slowly over the surface of the [${food}], making it look like an alien landscape.\n--shot (4-7s): The camera navigates through a "canyon" of the food/drink.\n--style: Very shallow depth of field. Dramatic, artistic lighting that creates long shadows. The colors are hyper-realistic.` },
-            'tiktok-recipe': { name: 'Resep Cepat TikTok / Reels', generator: (food) => `A 7-second, high-energy recipe video for [${food}], TikTok/Reels style.\n--shot (0-5s): A series of very fast jump cuts from a top-down angle, showing each step of the recipe. Emphasize satisfying ASMR sounds. On-screen text captions pop up.\n--shot (5-7s): The final, delicious-looking dish/drink is presented. A quick zoom-in effect. The text "${food.toUpperCase()}" appears in a bold, trendy, sans-serif font.\n--style: Bright, saturated colors. High energy, fast-paced editing. Shot on an iPhone for an authentic feel. Vertical 9:16 aspect ratio.` },
-            'chef-table-doc': { name: 'Dokumenter Sinematik (Chef\'s Table)', generator: (food) => `A 7-second cinematic documentary clip about [${food}], in the style of Chef's Table.\n--shot (0-4s): A beautiful, slow-motion macro shot of a key ingredient being carefully prepared. Natural, soft light from a window.\n--shot (4-7s): The camera slowly pans across the finished [${food}], revealing its intricate details. The text "${food}" appears subtly and elegantly at the bottom.\n--style: Moody, natural lighting. Desaturated, film-like color grading. Narrative and emotional feel. Extremely high detail, shot on a RED cinema camera.` },
-            'dramatic-action': { name: 'Dramatic Action Video', generator: (food) => `A 5-second, ultra-slow-motion video of [${food}]. Dark, intense, fiery mood.\n--shot (0-2s): Starts with an extreme close-up. A slow, cinematic dolly in.\n--shot (2-4s): The peak action. A fork/straw/spoon enters the frame, captured in 120fps slow motion. A portion is lifted/stirred, with steam rising. The camera makes a slow orbit shot.\n--shot (4-5s): As the action pauses mid-air, the text "${food.toUpperCase()}" slams onto the screen with a fiery, ember-like particle effect. The font is a bold, aggressive, brushed metal style.\n--style: Cinematic color grading, high contrast, deep shadows, shot with a macro lens for extreme detail, 8K quality.` },
-        };
-        
-        // --- Functions ---
-        function updateUIForMode() {
-            if (currentMode === 'image') {
-                modeImageBtn.classList.replace('toggle-btn-inactive', 'toggle-btn-active');
-                modeVideoBtn.classList.replace('toggle-btn-active', 'toggle-btn-inactive');
-                imageUploadSection.classList.remove('hidden');
-                populateStyles(imagePrompts);
-                generateBtn.textContent = 'Buat Prompt Gambar';
-            } else { // video mode
-                modeVideoBtn.classList.replace('toggle-btn-inactive', 'toggle-btn-active');
-                modeImageBtn.classList.replace('toggle-btn-active', 'toggle-btn-inactive');
-                imageUploadSection.classList.add('hidden');
-                populateStyles(videoPrompts);
-                generateBtn.textContent = 'Buat Prompt Video';
-            }
-            outputContainer.classList.add('hidden');
-            usageNote.classList.add('hidden');
-        }
 
-        function populateStyles(promptObject) {
-            styleSelect.innerHTML = '';
-            for (const key in promptObject) {
-                const option = document.createElement('option');
-                option.value = key;
-                option.textContent = promptObject[key].name;
-                styleSelect.appendChild(option);
-            }
-        }
-
-        // --- Event Listeners ---
-        modeImageBtn.addEventListener('click', () => {
-            currentMode = 'image';
-            updateUIForMode();
-        });
-
-        modeVideoBtn.addEventListener('click', () => {
-            currentMode = 'video';
-            updateUIForMode();
-        });
-
-        generateBtn.addEventListener('click', () => {
-            const foodName = foodInput.value.trim();
-            const selectedStyle = styleSelect.value;
-
-            if (!foodName) {
-                outputContainer.classList.remove('hidden');
-                outputPrompt.value = "Harap masukkan nama makanan atau minuman terlebih dahulu.";
-                return;
-            }
-
-            let generatedPrompt = '';
-            if (currentMode === 'image') {
-                generatedPrompt = imagePrompts[selectedStyle].generator(foodName, hasUploadedImage);
-                usageNote.classList.toggle('hidden', !hasUploadedImage);
+        window.checkApiKeyStatus = () => {
+            const apiKey = localStorage.getItem(API_KEY_STORAGE);
+            if (apiKey) {
+                apiKeyNotice.classList.add('hidden');
+                generateBtn.disabled = false;
             } else {
-                generatedPrompt = videoPrompts[selectedStyle].generator(foodName);
-                usageNote.classList.add('hidden');
+                apiKeyNotice.classList.remove('hidden');
+                generateBtn.disabled = true;
             }
-            
-            outputPrompt.value = generatedPrompt;
-            outputContainer.classList.remove('hidden');
+        };
+
+        saveApiKeyBtn.addEventListener('click', saveApiKey);
+        deleteApiKeyBtn.addEventListener('click', deleteApiKey);
+
+        // Event listener untuk area upload
+        imageUploader.addEventListener('click', () => fileInput.click());
+        changeImageBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
         });
-        
-        // Image Upload Listeners
-        imageUpload.addEventListener('change', (event) => {
+
+        fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
-            if (file) {
+            if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     imagePreview.src = e.target.result;
+                    uploadPrompt.classList.add('hidden');
                     imagePreviewContainer.classList.remove('hidden');
-                    uploadLabel.classList.add('hidden');
-                    hasUploadedImage = true;
                 };
                 reader.readAsDataURL(file);
+                let fileName = file.name.split('.')[0];
+                fileName = fileName.replace(/[-_]/g, ' ');
+                foodNameInput.value = fileName.replace(/\b\w/g, l => l.toUpperCase());
             }
+        });
+
+        // Event listener untuk tombol generate
+        generateBtn.addEventListener('click', () => {
+            const foodName = foodNameInput.value.trim() || "[Nama Makanan Anda]";
+            const selectedStyle = document.querySelector('input[name="style"]:checked').value;
+            const generatedPrompt = createPrompt(selectedStyle, foodName);
+            promptOutput.value = generatedPrompt;
         });
         
-        removeImageBtn.addEventListener('click', () => {
-            imagePreview.src = '#';
-            imageUpload.value = '';
-            imagePreviewContainer.classList.add('hidden');
-            uploadLabel.classList.remove('hidden');
-            hasUploadedImage = false;
-        });
-
-        // Copy Button Listener
+        // Event listener untuk tombol salin
         copyBtn.addEventListener('click', () => {
-            outputPrompt.select();
-            outputPrompt.setSelectionRange(0, 99999);
-            try {
+            if (promptOutput.value) {
+                promptOutput.select();
                 document.execCommand('copy');
-                copyBtn.textContent = 'Disalin!';
-                setTimeout(() => { copyBtn.textContent = 'Salin'; }, 2000);
-            } catch (err) {
-                console.error('Gagal menyalin teks: ', err);
-                copyBtn.textContent = 'Gagal';
-                setTimeout(() => { copyBtn.textContent = 'Salin'; }, 2000);
+                copyFeedback.style.opacity = '1';
+                setTimeout(() => {
+                    copyFeedback.style.opacity = '0';
+                }, 2000);
             }
         });
 
-        // --- Initial Setup ---
-        window.onload = () => {
-            // onAuthStateChanged will handle the initial UI setup for the main app
-        };
+        // Event listener untuk tombol reset
+        resetBtn.addEventListener('click', () => {
+            foodNameInput.value = '';
+            fileInput.value = null;
+            imagePreview.src = '#';
+            imagePreviewContainer.classList.add('hidden');
+            uploadPrompt.classList.remove('hidden');
+            promptOutput.value = '';
+            document.getElementById('style-pro-photographer').checked = true;
+        });
 
+        // Fungsi untuk membuat prompt berdasarkan gaya yang dipilih
+        function createPrompt(style, foodName) {
+            const prompts = {
+                'pro-photographer': `Masterful food photography of [${foodName}], captured by a world-class professional. Employ a creative, unconventional low-angle shot to make the dish look heroic and monumental. The lighting is the hero, using dramatic rim lighting to create a beautiful, ethereal glow around the edges of the food. Introduce subtle, hyper-realistic effects: a delicate wisp of steam elegantly rising from the hot food, and a soft, artistic lens flare from a backlight source. The composition is dynamic and expertly balanced. Ultra-sharp focus, shallow depth of field, shot on a 105mm macro lens.`,
+                'motion-frozen': `High-speed 'motion frozen in time' photography. A key ingredient of [${foodName}] is dynamically dropping into the dish, creating a dramatic, large splash that is captured with perfect clarity. Individual droplets of liquid or particles of seasoning are suspended mid-air. The action is the hero of the shot. Use extremely sharp focus, fast shutter speed effect, and professional studio lighting to illuminate every detail of the splash and texture.`,
+                'dark-moody': `A moody and dramatic food photography of [${foodName}], styled with a painterly feel reminiscent of a Dutch still life painting. Use deep, soft shadows and a single, directional light source from the side (chiaroscuro) to sculpt the rich texture of the food. The background is a dark, textured surface like aged slate or dark, crumpled linen. Include vintage props like a tarnished silver spoon. The colors are deep, rich, and desaturated, emphasizing a sense of timeless, rustic elegance.`,
+                'rustic': `A bright and airy, rustic farm-to-table scene featuring [${foodName}]. The dish is served on handmade ceramic tableware, placed on a weathered, light-colored wooden table. Beautiful, soft natural sunlight streams in from a large window, creating gentle highlights. The scene is surrounded by fresh, raw ingredients related to the dish, scattered artfully on the table next to a piece of rustic, unbleached linen napkin. The overall feeling is wholesome, fresh, and authentically natural.`,
+                'minimalist': `A clean, elegant, minimalist top-down (flat lay) photograph of [${foodName}]. The dish is placed precisely off-center on a pristine, cool-toned surface like white marble or pale concrete. Emphasize negative space to create a sense of calm and draw the eye directly to the dish. Props are used sparingly, perhaps only a single, sleek utensil. The lighting is perfectly soft and even, without any harsh shadows. The focus is entirely on the beautiful simplicity of the dish.`,
+                'lifestyle': `A warm and inviting lifestyle food photograph capturing a human element. A pair of hands is seen interacting with the [${foodName}] – perhaps drizzling a sauce, taking a bite, or sharing the dish. The scene feels candid and in-the-moment, set against a cozy, lived-in backdrop like a kitchen or a bustling cafe. Use a shallow depth of field (bokeh background) to keep the focus sharp on the hands and the food, telling a story and creating a warm, relatable feeling.`,
+                'cinematic': `Cinematic food photography of [${foodName}]. The scene is lit with dramatic, moody lighting, creating a high-contrast, film noir atmosphere. A strong key light highlights the main subject, while fill lights are kept low to create deep shadows. The background is dark and out of focus, with subtle bokeh highlights. The composition uses the rule of thirds to create a visually compelling and story-driven image. Colors are graded with a cinematic teal and orange look.`,
+                'hyper-realistic': `An extreme close-up, hyper-realistic macro photograph of [${foodName}]. Every texture is rendered in stunning 8K UHD detail, from the glistening sauce to the char marks on the food. The focus is razor-sharp on a specific point of interest, with the rest falling into a soft, creamy bokeh. The lighting is clean and bright, designed to reveal every minute detail and make the food look incredibly fresh and appetizing.`,
+                'advertising': `A clean, bright, and vibrant advertising-style shot of [${foodName}]. The food is perfectly styled and placed centrally against a seamless, solid-color background (e.g., a vibrant yellow or sky blue). The lighting is high-key, bright, and even, eliminating most shadows to create a fresh, energetic, and highly commercial look. The colors of the food are saturated and pop against the background.`,
+                'pop-art': `A graphic, pop-art inspired food photograph of [${foodName}]. The image uses bold, flat colors and hard, defined shadows, reminiscent of an Andy Warhol screen print. The food is placed against a background of repeating geometric patterns or a contrasting, vibrant solid color. The overall look is playful, modern, and highly stylized, breaking the rules of traditional food photography.`,
+                'camera-specs': `A hyper-detailed photograph of [${foodName}], shot as if using a specific, high-end camera setup. The scene is bathed in soft, natural light with a subtle haze for warmth and atmosphere. Focus on photorealistic textures and a very shallow depth of field to isolate the subject. **Shot on Fujifilm X-T4, 85mm f/1.8 lens**, 8K resolution, cinematic lighting. Every detail, from steam to glistening surfaces, should be visible.`,
+                'poster-3d': `A high-quality food delivery advertisement poster with a 3D pop-out effect. A gigantic, ultra-realistic [${foodName}] is emerging from a smartphone screen, creating the illusion of the food bursting out into the real world. The background is a bright, vibrant solid color with a subtle repeating pattern of related icons. The overall visual is modern, clean, appetizing, and promotional. 4:5 aspect ratio.`,
+                'product-fantasy': `A hyper-realistic digital painting of a [${foodName}] product package emerging from the roots of a majestic tree in an enchanted forest. Surrounded by glowing sunlight, ripe fruits hanging from branches, and butterflies fluttering around. The packaging should have vivid, clean branding with dew-kissed fruits printed on it, detailed textures, and realistic lighting. The scene should feel magical, warm, and refreshing, with cinematic depth of field and rendered in 4K resolution.`,
+                'dynamic-drink': `A vibrant and dynamic advertisement shot of [${foodName}]. The refreshing drink is being poured or splashed into a clear plastic cup, with ice cubes and toppings like boba pearls or fruit pieces captured in mid-air. Use professional studio lighting to make the drink and the plastic cup glisten. The background should be a clean, contrasting color that makes the drink pop. The final image must be hyper-realistic, with ultra-detailed textures, sharp focus, and a mouth-watering presentation, frozen in time. 8K UHD.`,
+                'double-exposure': `A striking and emotionally charged double exposure artwork. A clean, sharp silhouette of [${foodName}] is the main subject. Inside this silhouette, a vibrant and detailed scene of its origin is visible, such as a lush coffee plantation for a cup of coffee, or a green pasture for a steak. The background is a subtle, warm-toned, hazy mist that contrasts with the detailed silhouette. The overall tone is expressive, vivid, and full of narrative depth, blending the final product with its natural source.`,
+                'commercial-perfect': `A perfect commercial shot of a delicious [${foodName}], dynamically falling or splashing into a bowl/plate. The scene uses cinematic food photography techniques with professional studio lighting and a contrasting background. The composition is in an advertising style, with ultra-detailed, hyper-realistic textures in 8K UHD resolution. The focus is tack-sharp, with garnishes gracefully scattering. Colors are vibrant, creating a mouth-watering presentation. The moment is frozen in time. Aspect ratio 3:4.`,
+                'premium-poster': `A cinematic promotional poster for a gourmet [${foodName}] with a dramatic and premium tone. The center of the image features an ultra-realistic, mouth-watering [${foodName}] on a round wooden or slate platform. The background is a warm, dark, moody restaurant setting, with floating embers, soft glows, and dynamic motion blur. The atmosphere is cozy yet intense, with cinematic lighting from the left and top, emphasizing luxury, indulgence, and appetite appeal. 4:5 aspect ratio.`,
+                'epic-billboard': `A hyper-realistic 3D billboard advertisement in a bustling, futuristic urban plaza. It showcases a gigantic, dynamic [${foodName}] bursting out of the display, surrounded by shards of glass, kinetic dust trails, and glowing motion lines. The background features a futuristic cityscape at golden hour, with chrome buildings and digital billboards. The sky has a dramatic tone with light rays illuminating the food. Aspect ratio 3:4.`,
+                'fiery-energy': `A hyper-realistic studio photograph of a sizzling [${foodName}] captured mid-air with dynamic energy. The scene is set against a dark black background, with flames and chili pepper flakes bursting behind the food to give a sense of intense heat and spice. Ingredients and drops of sauce float around in motion. The lighting is cinematic and warm, enhancing textures and freshness. Styled like a bold street food advertisement with vibrant colors, motion, and dramatic fire effects.`,
+                'grill-master': `A high-resolution cinematic photograph of a thick, juicy [${foodName}] being grilled over an open flame. Flames burst up dramatically beneath the grill grates, with glowing embers and smoke swirling around the food. The surface is seared with visible grill marks, glistening with melted fat and oil. Sparks and small bits of burning herbs fly in the air. The background is dark, with moody lighting that enhances the rich textures, char, and heat.`,
+                'levitation': `An irresistibly mouth-watering [${foodName}] dramatically captured mid-air in an eye-catching 3:4 composition. Each distinct ingredient is suspended gracefully, showcasing hyper-realistic textures, rich vibrant colors, and glossy highlights that emphasize freshness. Floating crumbs, delicately exploding herbs, shimmering seasoning flakes, and elegantly dripping sauces amplify the dynamic movement and intensity of the scene.`
+            };
+            return prompts[style];
+        }
     </script>
 </body>
 </html>
